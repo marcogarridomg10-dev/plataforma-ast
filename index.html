@@ -1,0 +1,1209 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Plataforma AST con IA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* VOICE: documento técnico de seguridad, sobrio y preciso; se usa en oficina y en tableta en piso de planta.
+   IDEA: el formato controlado de un sistema de gestión ISO 45001: encabezado con código, revisión, estado y firmas.
+   PICTURE: la tabla AST coloreada por clasificación y el perfil de riesgo inicial contra residual.
+   COLOUR and TYPE: azul marino institucional, blanco y gris frío; amarillo de seguridad solo como acento; IBM Plex Sans.
+   LAYOUT: barra institucional con estado del documento, indicador de etapas, columna de trabajo de 1280px. */
+:root{color-scheme:light dark;
+--bg:light-dark(#f3f5f8,#0e1318);--surf:light-dark(#ffffff,#161c23);--surf2:light-dark(#f7f9fb,#1c242d);
+--line:light-dark(#dfe4ea,#2a343f);--line2:light-dark(#c5ced8,#3b4755);
+--ink:light-dark(#0f1b2a,#e7ecf1);--mute:light-dark(#5b6878,#9ba8b5);
+--navy:#0f2a44;--navy2:#1b3d60;--acc:#f5b301;--pri:light-dark(#0f2a44,#3f7fd6);--priH:light-dark(#1b3d60,#5590e0);
+--ma:#c62828;--a:#f2b705;--m:#1f5fbf;--b:#2e7d32;--focus:#3f7fd6;
+--sh:0 1px 2px rgb(15 27 42/.06),0 4px 14px rgb(15 27 42/.05)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "IBM Plex Sans",system-ui,sans-serif;overflow-x:clip;font-variant-numeric:tabular-nums}
+h1,h2,h3{line-height:1.15;margin:0 0 .4em;text-wrap:balance;letter-spacing:-.01em}
+h1{font-size:clamp(26px,3.2vw,34px);font-weight:700}h2{font-size:19px;font-weight:600}h3{font-size:16px;font-weight:600}
+p{margin:.3em 0 .8em}
+a{color:var(--pri)}
+.top{background:var(--navy);color:#fff;position:sticky;top:0;z-index:20;box-shadow:0 1px 0 #0003}
+.topin{max-width:1280px;margin:auto;padding:0 max(3vw,14px);display:flex;flex-wrap:wrap;gap:0 20px;align-items:center;min-height:62px}
+.brand{display:flex;gap:12px;align-items:center;margin-inline-end:auto;padding:8px 0}
+.brand svg{flex:none}
+.brand b{display:block;font-size:16px;font-weight:600;line-height:1.2}
+.brand small{display:block;font-size:12.5px;color:#b8c6d6;line-height:1.2}
+.docchip{display:flex;gap:8px;align-items:center;font-size:13.5px;color:#d6e0ea;padding:6px 0}
+.seal{display:inline-flex;gap:6px;align-items:center;font-weight:700;font-size:12.5px;letter-spacing:.04em;text-transform:uppercase;border-radius:6px;padding:3px 10px;color:#fff;white-space:nowrap;line-height:1.5;box-shadow:inset 0 0 0 1.5px #ffffff59}
+.seal.sl-b{background:#5b6878}.seal.sl-r{background:#1f5fbf}.seal.sl-a{background:#2e7d32}
+.hdr .seal{font-size:13px;padding:4px 12px}
+.hdr .ctrl span.seal,.hdr .ctrl span.seal span{color:#fff}
+nav{display:flex;flex-wrap:wrap;gap:2px;width:100%;border-top:1px solid #ffffff1a}
+nav a{color:#c9d5e2;text-decoration:none;padding:12px 14px 11px;font-weight:500;font-size:15px;min-height:46px;display:inline-flex;gap:8px;align-items:center;border-bottom:3px solid transparent}
+nav a:hover{color:#fff}
+nav a[aria-current=page]{color:#fff;border-bottom-color:var(--acc)}
+nav .nn{width:22px;height:22px;border-radius:50%;display:inline-grid;place-items:center;font-size:12.5px;font-weight:700;border:1.5px solid #ffffff66;flex:none}
+nav a[aria-current=page] .nn{background:var(--acc);border-color:var(--acc);color:var(--navy)}
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,label.btn:focus-within{outline:3px solid var(--focus);outline-offset:2px}
+.strip{background:var(--surf);border-bottom:1px solid var(--line)}
+.stripin{max-width:1280px;margin:auto;padding:10px max(3vw,14px);display:flex;flex-wrap:wrap;gap:6px 4px;align-items:center}
+.stp{display:flex;align-items:center;gap:8px;text-decoration:none;color:var(--mute);font-size:14px;font-weight:500;padding:6px 10px;border-radius:8px;min-height:44px}
+.stp:hover{background:var(--surf2)}
+.stp[aria-current=step]{background:var(--surf2);box-shadow:inset 0 -2px 0 var(--pri)}
+.stp i{font-style:normal;width:24px;height:24px;border-radius:50%;display:inline-grid;place-items:center;font-size:12.5px;font-weight:700;border:1.5px solid var(--line2);color:var(--mute);flex:none}
+.stp.done{color:var(--ink)}.stp.done i{background:var(--b);border-color:var(--b);color:#fff}
+.stp.warn{color:var(--ink)}.stp.warn i{background:var(--a);border-color:var(--a);color:#111}
+.stp.bad{color:var(--ink)}.stp.bad i{background:var(--ma);border-color:var(--ma);color:#fff}
+.stp small{color:var(--mute);font-weight:400}
+.sep{width:18px;height:1.5px;background:var(--line2)}
+main{max-width:1280px;margin:auto;padding:26px max(3vw,14px) 80px}
+section[hidden]{display:none}
+.eyebrow{font-size:13px;font-weight:600;color:var(--mute);margin:0 0 4px}
+.lead{color:var(--mute);max-width:72ch}
+.surface,.card,.panel,fieldset{background:var(--surf);border:1px solid var(--line);border-radius:12px;box-shadow:var(--sh)}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:16px;margin:18px 0}
+.card{padding:20px;display:flex;flex-direction:column;gap:10px;border-top:3px solid var(--line)}
+.card.on{border-top-color:var(--pri)}
+.card .ico{width:40px;height:40px;color:var(--pri)}
+.card h3{margin:0;font-size:17px}
+.note{font-size:13.5px;color:var(--mute)}
+textarea,input,select{font:inherit;font-size:16px;color:var(--ink);background:var(--surf);border:1px solid var(--line2);border-radius:8px;padding:10px 12px;width:100%}
+textarea{min-height:120px;resize:vertical;line-height:1.45}
+select{min-height:46px}
+input:hover,select:hover,textarea:hover{border-color:var(--mute)}
+label{font-weight:500;font-size:14px;display:block;margin-bottom:5px;color:var(--ink)}
+.req::after{content:" *";color:var(--ma)}
+button,.btn{font:inherit;font-weight:600;font-size:15px;min-height:46px;padding:10px 18px;border-radius:8px;border:1px solid var(--line2);background:var(--surf);color:var(--ink);cursor:pointer;display:inline-flex;gap:8px;align-items:center;justify-content:center;text-decoration:none;white-space:nowrap}
+button:hover,.btn:hover{border-color:var(--mute)}
+button.pri,.btn.pri{background:var(--pri);border-color:var(--pri);color:#fff}
+button.pri:hover,.btn.pri:hover{background:var(--priH)}
+button.dark{background:var(--surf);border-color:var(--pri);color:var(--pri)}
+button.sm,.btn.sm{min-height:44px;padding:6px 12px;font-size:14px}
+button.x{color:var(--mute)}
+button:disabled{opacity:.45;cursor:not-allowed}
+.big{font-size:16px;min-height:54px;padding:12px 28px}
+.btn svg,button svg{width:18px;height:18px;flex:none}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:14px 16px}
+fieldset{padding:18px 20px 20px;margin:0 0 18px}
+legend{font-weight:600;font-size:16px;padding:0 6px}
+.thumbs{display:flex;flex-wrap:wrap;gap:8px}
+.thumb{position:relative;width:96px}
+.thumb img{width:96px;height:72px;object-fit:cover;border-radius:6px;display:block;border:1px solid var(--line)}
+.thumb span{font-size:12px;display:block;text-align:center;color:var(--mute)}
+.thumb button{position:absolute;top:3px;right:3px;min-height:30px;width:30px;padding:0;border-radius:50%;font-size:16px;background:#0f1b2acc;color:#fff;border:0}
+.thumb button::after{content:"";position:absolute;inset:-7px}
+.panel{padding:20px;margin:16px 0}
+.panel>h2:first-child{margin-bottom:12px}
+.alert{border-radius:10px;padding:13px 16px;margin:10px 0;border:1px solid var(--line);border-inline-start:5px solid;background:var(--surf);font-size:15px}
+.alert.stop{border-inline-start-color:var(--ma);background:light-dark(#fdf0ef,#2c1514)}
+.alert.warn{border-inline-start-color:var(--a);background:light-dark(#fffaeb,#2a2410)}
+.alert.ok{border-inline-start-color:var(--b)}
+.alert.info{border-inline-start-color:var(--m)}
+.alert strong{display:block;margin-bottom:2px}
+.alert ul{margin:6px 0 0;padding-inline-start:20px}
+.k{display:inline-block;padding:2px 8px;border-radius:5px;font-weight:600;font-size:12.5px;white-space:nowrap}
+.k-ma{background:var(--ma);color:#fff}.k-a{background:var(--a);color:#111}.k-m{background:var(--m);color:#fff}.k-b{background:var(--b);color:#fff}
+.num{text-align:right;white-space:nowrap}
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%}
+.tablewrap{background:var(--surf);border:1px solid var(--line);border-radius:12px;box-shadow:var(--sh)}
+/* Tabla AST: 6 columnas agrupadas al 100 % del ancho; una fila por riesgo */
+.astwrap{overflow:visible}
+table.ast{width:100%;table-layout:fixed;font-size:13.5px;line-height:1.4}
+table.ast col.c1{width:13%}table.ast col.c2{width:19%}table.ast col.c3{width:17%}table.ast col.c4{width:26%}table.ast col.c5{width:12%}table.ast col.c6{width:13%}
+table.ast th{background:var(--navy);color:#fff;font-weight:600;font-size:12.5px;line-height:1.3;padding:9px 8px;vertical-align:bottom;text-align:left;position:sticky;top:var(--toph,0);z-index:2;border-inline-end:1px solid #ffffff22}
+table.ast thead th:first-child{border-start-start-radius:11px}table.ast thead th:last-child{border-start-end-radius:11px;border-inline-end:0}
+table.ast th small{display:block;font-weight:400;color:#c9d5e2;font-size:11.5px}
+table.ast td{border:1px solid var(--line);padding:8px;vertical-align:top;overflow-wrap:anywhere;background:var(--surf)}
+table.ast tr.b2>td{background:var(--surf2)}
+table.ast td.pasoc .pn{display:inline-grid;place-items:center;min-width:28px;height:28px;border-radius:6px;background:light-dark(var(--navy),var(--navy2));box-shadow:inset 0 0 0 1px #ffffff33;color:#fff;font-weight:700;font-size:13.5px;margin-bottom:6px}
+table.ast td.pasoc b{display:block;font-weight:600;margin-bottom:6px}
+table.ast .sub{font-size:12.5px;color:var(--mute);margin-top:5px}
+table.ast .rid{font-weight:700;margin-inline-end:4px}
+.fps3{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center;margin-bottom:6px}
+.fps3 label{display:inline-flex;gap:4px;align-items:center;margin:0;font-size:12.5px;font-weight:600;color:var(--mute)}
+table.ast select{-webkit-appearance:none;appearance:none;width:44px;min-height:44px;padding:0 15px 0 9px;font-size:14px;font-weight:600;background:var(--surf) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%237d8a99' stroke-width='1.6'/%3E%3C/svg%3E") no-repeat right 5px center/9px 6px}
+.kv{display:flex;flex-wrap:wrap;gap:4px 6px;align-items:center;margin:3px 0}
+.kv>span:first-child{color:var(--mute);font-size:12.5px;font-weight:600;min-width:20px}
+.kv b{font-size:14.5px}
+.ctls{list-style:none;margin:0;padding:0;display:grid;gap:7px}
+.ctls li{padding-bottom:7px;border-bottom:1px dashed var(--line)}
+.ctls li:last-child{border:0;padding-bottom:0}
+.ctls .cn{font-size:12px;color:var(--mute);margin-inline:4px 2px}
+.org{display:inline-flex;gap:4px;align-items:center;font-size:11.5px;font-weight:500;color:var(--mute);border:1px solid var(--line2);border-radius:999px;padding:0 7px;line-height:1.7;white-space:nowrap;vertical-align:middle}
+.org.nr{border-style:dashed}
+.orgleg{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;font-size:13px;color:var(--mute);background:var(--surf);border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin:0 0 10px}
+.orgleg b{color:var(--ink);font-weight:600}
+.vn{display:inline-block;font-size:12px;color:var(--mute);font-style:italic;font-weight:400}
+.vn::before{content:"ⓘ ";font-style:normal}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+table.simple th{font-size:13px;color:var(--mute);font-weight:600}
+table.simple th,table.simple td{border-bottom:1px solid var(--line);padding:9px 8px;text-align:left;vertical-align:top}
+table.simple input{padding:8px}
+.hdr{display:grid;grid-template-columns:150px minmax(0,1fr) 220px;border:1px solid var(--line2);border-radius:12px;overflow:hidden;background:var(--surf);box-shadow:var(--sh)}
+.hdr>div{padding:14px 16px}
+.hdr .lg{border-inline-end:1px solid var(--line);display:grid;place-items:center}
+.hdr .lg img{max-width:120px;max-height:70px}
+.hdr .ctrl{border-inline-start:1px solid var(--line);background:var(--surf2);font-size:13.5px}
+.hdr .ctrl div{display:flex;justify-content:space-between;gap:8px;padding:3px 0;border-bottom:1px dashed var(--line)}
+.hdr .ctrl div:last-child{border:0}
+.hdr .ctrl span{color:var(--mute)}
+.hdr .ttl{font-size:17px;font-weight:700;margin:0 0 10px}
+.hdr dl{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr));gap:2px 18px;margin:0}
+.hdr dt{font-size:12.5px;color:var(--mute)}.hdr dd{margin:0 0 7px;font-weight:500;font-size:14.5px}
+.nd{color:var(--mute);font-weight:400;font-style:italic}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr));gap:12px;margin:16px 0}
+.kpi{background:var(--surf);border:1px solid var(--line);border-radius:12px;padding:14px 16px;box-shadow:var(--sh)}
+.kpi span{display:block;font-size:13px;color:var(--mute)}
+.kpi b{display:block;font-size:28px;font-weight:700;line-height:1.15;margin:2px 0}
+.kpi small{font-size:12.5px;color:var(--mute)}
+.dash{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:16px}
+.prof{display:grid;gap:12px;margin-top:6px}
+.prof .pr{display:grid;grid-template-columns:90px minmax(0,1fr);gap:10px;align-items:center}
+.prof .bars{display:grid;gap:4px}
+.prof .bar{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--mute)}
+.prof .bar i{display:block;height:14px;border-radius:3px;min-width:2px}
+.prof .bar i.ri{opacity:.45}
+.legend{display:flex;gap:14px;font-size:12.5px;color:var(--mute);margin-top:10px}
+.legend i{display:inline-block;width:14px;height:10px;border-radius:2px;background:var(--mute);margin-inline-end:5px;vertical-align:middle}
+.step{background:var(--surf);border:1px solid var(--line);border-radius:12px;margin:14px 0;overflow:hidden;box-shadow:var(--sh)}
+.step>header{background:var(--surf2);border-bottom:1px solid var(--line);padding:12px 14px;display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:start}
+.step .n{font-weight:700;font-size:18px;background:var(--navy);color:#fff;border-radius:8px;min-width:40px;text-align:center;padding:6px}
+.risk{border-top:1px solid var(--line);padding:16px}
+.step>header+.risk{border-top:0}
+.risk .rh{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px}
+.risk .rh>b{font-size:15px;padding-top:28px}
+.fps{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr));gap:10px;margin:12px 0 6px}
+.score{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin:10px 0;font-size:14px;background:var(--surf2);border:1px solid var(--line);border-radius:8px;padding:8px 12px}
+.ctl{display:grid;grid-template-columns:auto minmax(0,1fr) 190px auto auto;gap:8px;align-items:center;margin:6px 0}
+.ctl .cn{font-size:13px;color:var(--mute);min-width:52px}
+.ctl label{display:flex;gap:6px;align-items:center;font-weight:500;font-size:14px;margin:0;white-space:nowrap;min-height:44px}
+.ctl input[type=checkbox],.chk input{width:20px;height:20px;accent-color:var(--pri)}
+.chk{display:flex;gap:10px;align-items:center;font-weight:400;font-size:15px;min-height:44px}
+.del{align-self:start}
+.tag{font-size:11.5px;font-weight:600;border:1px solid var(--line2);border-radius:5px;padding:1px 6px;white-space:nowrap}
+.tag.prop{border-color:var(--m);color:light-dark(#1f5fbf,#8fb4f0)}
+.jt{display:inline-block;font-size:12px;font-weight:600;border-radius:5px;padding:1px 7px;white-space:nowrap;border:1px solid}
+.j1,.j2{color:light-dark(#6a1b9a,#d3a6ef);border-color:#6a1b9a55}.j3{color:light-dark(#2e7d32,#7cc47f);border-color:#2e7d3266}.j4{color:light-dark(#1f5fbf,#8fb4f0);border-color:#1f5fbf66}.j5{color:var(--mute);border-color:var(--line2)}
+details{margin:8px 0}summary{cursor:pointer;font-weight:500;min-height:32px;font-size:14px}
+.tabs{display:inline-flex;gap:2px;margin:18px 0 12px;background:var(--surf2);border:1px solid var(--line);border-radius:10px;padding:3px}
+.tabs button{border:0;background:transparent;min-height:44px}
+.tabs button[aria-pressed=true]{background:var(--surf);box-shadow:var(--sh);color:var(--pri)}
+.stages{list-style:none;margin:12px 0;padding:0;display:grid;gap:8px}
+.stages li{display:flex;gap:10px;align-items:center;font-size:15px;color:var(--mute)}
+.stages li i{width:20px;height:20px;border-radius:50%;border:2px solid var(--line2);flex:none}
+.stages li.on{color:var(--ink);font-weight:500}.stages li.on i{border-color:var(--pri);border-top-color:transparent;animation:spin 1s linear infinite}
+.stages li.ok{color:var(--ink)}.stages li.ok i{background:var(--b);border-color:var(--b)}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.stages li.on i{animation:none;border-top-color:var(--pri)}}
+.hist{display:grid;gap:10px}
+.hi{background:var(--surf);border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;box-shadow:var(--sh)}
+.hi .meta{font-size:13.5px;color:var(--mute)}
+#toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:var(--navy);color:#fff;padding:12px 18px;border-radius:10px;font-weight:500;max-width:90vw;z-index:50;display:none;box-shadow:0 8px 24px #0004}
+.mt{background:var(--surf)}
+.mt th,.mt td{border:1px solid var(--line);padding:7px 9px;text-align:left;vertical-align:top;font-size:14.5px}
+.mt th{background:var(--surf2);font-weight:600}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:18px}
+ul.clean{margin:0;padding-inline-start:20px}
+.cbrow{grid-template-columns:160px 110px minmax(0,1fr) auto}
+.toolbar{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;justify-content:space-between;margin-bottom:16px}
+@media(max-width:900px){.dash{grid-template-columns:1fr}.hdr{grid-template-columns:1fr}.hdr .lg,.hdr .ctrl{border:0;border-bottom:1px solid var(--line)}.hdr .lg{justify-items:start}
+  .astwrap{overflow:auto;max-height:78vh;-webkit-overflow-scrolling:touch;border-radius:12px}
+  table.ast{width:1060px}
+  table.ast col.c1{width:150px}table.ast col.c2{width:220px}table.ast col.c3{width:180px}table.ast col.c4{width:260px}table.ast col.c5{width:130px}table.ast col.c6{width:120px}
+  table.ast th{top:0}
+  table.ast .stk1{position:sticky;left:0;z-index:1}
+  table.ast .stk2{position:sticky;left:149px;z-index:1;box-shadow:inset -2px 0 0 var(--line2)}
+  table.ast th.stk1,table.ast th.stk2{z-index:3}}
+@media(max-width:600px){
+  table.ast{width:930px;font-size:12.5px}
+  table.ast col.c1{width:84px}table.ast col.c2{width:150px}
+  table.ast .stk2{left:83px}
+  table.ast td{padding:6px}
+  .orgleg{font-size:12.5px}
+  .cbrow{grid-template-columns:1fr 1fr}.cbrow>div:nth-child(3){grid-column:1/-1}.top{position:static}.docchip{display:none}.sep{display:none}.ctl{grid-template-columns:auto minmax(0,1fr)}.ctl select,.ctl label,.ctl .del{grid-column:2}.step>header,.risk .rh{grid-template-columns:auto minmax(0,1fr)}.step>header>.del,.risk .rh>.del{grid-column:2}.risk .rh>b{padding-top:0}.hi{grid-template-columns:1fr}table.simple{font-size:14px}}
+@media print{.top,.strip,.noprint{display:none}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="topin">
+    <div class="brand"><svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><path d="M17 2l12 4.5v9.2c0 7.6-5.1 13.6-12 16.3C10.1 29.3 5 23.3 5 15.7V6.5z" fill="#f5b301"/><path d="M11.5 17l4 4 7.5-8" stroke="#0f2a44" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><div><b>Plataforma AST</b><small>Análisis de Seguridad en el Trabajo · NOM-STPS · ISO 45001</small></div></div>
+    <div class="docchip" id="docchip"></div>
+    <nav id="nav">
+      <a href="#nuevo" data-v="nuevo"><span class="nn" aria-hidden="true">1</span><span><span class="vh">Paso 1: </span>Actividad</span></a>
+      <a href="#datos" data-v="datos"><span class="nn" aria-hidden="true">2</span><span><span class="vh">Paso 2: </span>Datos del AST</span></a>
+      <a href="#ast" data-v="ast"><span class="nn" aria-hidden="true">3</span><span><span class="vh">Paso 3: </span>Revisión y exportación</span></a>
+      <a href="#historial" data-v="historial">Historial</a>
+      <a href="#metodologia" data-v="metodologia">Metodología</a>
+    </nav>
+  </div>
+</header>
+<div class="strip noprint"><div class="stripin" id="strip"></div></div>
+<main>
+
+<section id="v-nuevo">
+  <p class="eyebrow">Paso 1 · Actividad</p>
+  <h1>Información de la actividad: ¿qué vamos a analizar?</h1>
+  <p class="lead">Describe la tarea, sube fotos o un video corto. Puedes combinar las tres entradas. El asistente identifica peligros, los evalúa con F × P × S y propone controles según la jerarquía de controles.</p>
+  <div id="hdrStatus"></div>
+  <div class="cards">
+    <div class="card" id="cTexto">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg>
+      <h3>Describir actividad</h3>
+      <p class="note">Pasos, herramientas, equipos, materiales, pesos, frecuencia y EPP actual.</p>
+      <textarea id="inTexto" rows="7" placeholder="Ejemplo: 1. Trasladar la pieza con grúa viajera e imán… 2. Ajustar con plantilla…"></textarea>
+    </div>
+    <div class="card" id="cFotos">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg>
+      <h3>Subir foto(s)</h3>
+      <p class="note">JPG, PNG o WebP. Se describirá lo observado y se separará de lo inferido.</p>
+      <label class="btn" for="inFotos" tabindex="0">Elegir fotos</label>
+      <input type="file" id="inFotos" accept="image/*" multiple hidden>
+      <div class="thumbs" id="fotoThumbs"></div>
+    </div>
+    <div class="card" id="cVideo">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3z"/></svg>
+      <h3>Subir video</h3>
+      <p class="note">Se extrae 1 fotograma cada 2 s (máximo 20) en tu navegador, con su marca de tiempo.</p>
+      <label class="btn" for="inVideo" tabindex="0">Elegir video</label>
+      <input type="file" id="inVideo" accept="video/*" hidden>
+      <div id="videoInfo" class="note"></div>
+      <div class="thumbs" id="frameThumbs"></div>
+    </div>
+  </div>
+  <div class="row">
+    <button class="pri big" id="btnAnalizar">Analizar riesgos</button>
+    <label class="chk"><input type="checkbox" id="deep"> Análisis profundo (más lento)</label>
+    <button id="btnManual" class="sm">Capturar AST manualmente</button>
+  </div>
+  <p class="note" id="replaceNote"></p>
+  <div id="aiMsg"></div>
+  <div id="preguntas"></div>
+  <div id="progreso"></div>
+</section>
+
+<section id="v-datos" hidden>
+  <p class="eyebrow">Paso 2 · Datos del AST</p>
+  <h1>Encabezado y control documental</h1>
+  <p class="lead">Estos datos los captura el usuario; la plataforma no trae datos predeterminados y la IA no los inventa. Los marcados con * son obligatorios para exportar.</p>
+  <div class="row" style="margin-bottom:14px"><button id="btnUltimos" class="sm" hidden>Usar últimos datos capturados</button><span class="note" id="ultimosNote"></span></div>
+  <form id="fDatos" autocomplete="off">
+    <fieldset><legend>Organización</legend>
+      <div class="grid">
+        <div><label for="h_empresa" class="req">Nombre de la empresa</label><input id="h_empresa" data-h="empresa"></div>
+        <div><label for="h_giro">Giro o industria</label><select id="h_giro" data-h="giro"><option value="">Selecciona…</option></select></div>
+        <div id="giroOtroBox" hidden><label for="h_giroOtro">Especifica el giro</label><input id="h_giroOtro" data-h="giroOtro"></div>
+        <div><label for="h_planta">Planta o sitio</label><input id="h_planta" data-h="planta"></div>
+        <div><label for="h_area" class="req">Área de trabajo</label><input id="h_area" data-h="area" placeholder="Nave, línea o departamento"></div>
+        <div><label for="h_logo">Logotipo (opcional)</label><input type="file" id="h_logo" accept="image/*"><div class="row" id="logoPrev"></div></div>
+      </div>
+    </fieldset>
+    <fieldset><legend>Datos del AST</legend>
+      <div class="grid">
+        <div><label for="h_numero">Número de AST</label><input id="h_numero" data-h="numero"></div>
+        <div><label for="h_fecha" class="req">Fecha de elaboración</label><input id="h_fecha" type="date" data-h="fecha"></div>
+        <div><label for="h_revision">Número de revisión</label><input id="h_revision" data-h="revision"></div>
+        <div><label for="h_posicion" class="req">Posición, puesto o máquina analizada</label><input id="h_posicion" data-h="posicion"></div>
+        <div><label for="h_supervisor" class="req">Supervisor del área</label><input id="h_supervisor" data-h="supervisor"></div>
+      </div>
+    </fieldset>
+    <fieldset><legend>Control documental</legend>
+      <div class="grid">
+        <div><label for="h_codigo">Código del formato</label><input id="h_codigo" data-h="codigo" placeholder="Código interno del formato AST"></div>
+        <div><label for="h_estado">Estado del documento</label><select id="h_estado" data-h="estado"><option>Borrador</option><option>En revisión</option><option>Aprobado</option></select></div>
+        <div><label for="h_proxima">Próxima revisión</label><input id="h_proxima" type="date" data-h="proxima"></div>
+      </div>
+      <div class="grid" style="margin-top:14px">
+        <div><label for="h_rn">Revisó: nombre</label><input id="h_rn" data-h2="reviso.nombre"></div>
+        <div><label for="h_rp">Revisó: puesto</label><input id="h_rp" data-h2="reviso.puesto"></div>
+        <div><label for="h_an">Aprobó: nombre</label><input id="h_an" data-h2="aprobo.nombre"></div>
+        <div><label for="h_ap">Aprobó: puesto</label><input id="h_ap" data-h2="aprobo.puesto"></div>
+      </div>
+      <h3 style="margin-top:18px">Control de cambios</h3>
+      <div id="cambios"></div>
+      <button type="button" id="addCambio" class="sm">Agregar registro de cambio</button>
+    </fieldset>
+    <fieldset><legend>Equipo evaluador</legend>
+      <div id="equipo"></div>
+      <button type="button" id="addMiembro" class="sm">Agregar integrante</button>
+    </fieldset>
+    <fieldset><legend>Personal expuesto</legend>
+      <p class="note">Se usa para elegir el límite de carga manual de la NOM-036-1-STPS-2018, Tabla 1. <span class="vn">Verificar versión vigente en DOF/STPS</span></p>
+      <div class="grid">
+        <div><label for="p_n">Número de trabajadores</label><input id="p_n" type="number" min="1" inputmode="numeric" data-p="n"></div>
+        <div><label for="p_genero">Género</label><select id="p_genero" data-p="genero"><option value="">Sin capturar</option><option value="H">Hombres</option><option value="M">Mujeres</option><option value="X">Mixto (hombres y mujeres)</option></select></div>
+        <div><label for="p_edad">Rango de edad</label><select id="p_edad" data-p="edad"><option value="">Sin capturar</option><option value="menor18">Menores de 18 años</option><option value="18-45">18 a 45 años</option><option value="mayor45">Mayores de 45 años</option><option value="mixto">Mixto (18 a más de 45 años)</option></select></div>
+      </div>
+      <label class="chk" style="margin-top:12px"><input type="checkbox" data-p="gestacion"> Incluye mujeres en gestación o en las 10 semanas posteriores al parto</label>
+      <label class="chk"><input type="checkbox" data-p="aval45"> Los mayores de 45 años cuentan con evaluación médica que avala el límite de 18 a 45 años</label>
+      <div id="limiteBox" class="alert info"></div>
+    </fieldset>
+  </form>
+  <div class="row"><a class="btn" href="#nuevo">← Paso 1 · Actividad</a><a class="btn pri" href="#ast" id="lnkPaso3">Continuar a Paso 3 · Revisión y exportación →</a></div>
+</section>
+
+<section id="v-ast" hidden>
+  <div id="astEmpty"></div>
+  <div id="astBody" hidden>
+    <div class="toolbar noprint">
+      <div><p class="eyebrow">Paso 3 · Revisión y exportación</p><h1 style="margin:0" id="astTitle">AST</h1></div>
+      <div class="row">
+        <button id="btnNuevoAst" class="sm x">Nuevo AST</button>
+        <button id="btnGuardar" class="dark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M5 3h11l3 3v15H5z"/><path d="M8 3v6h8V3M8 21v-7h8v7"/></svg>Guardar en historial</button>
+        <button id="btnXlsx" class="pri"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 19h16"/></svg>Excel</button>
+        <button id="btnPdf" class="pri"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 19h16"/></svg>PDF para firma</button>
+      </div>
+    </div>
+    <div id="expMsg"></div>
+    <div id="astHead"></div>
+    <div id="astResumen"></div>
+    <div id="astAlerts"></div>
+    <div id="astObs"></div>
+    <div class="tabs noprint" id="astTabs">
+      <button class="sm" data-tab="tabla" aria-pressed="true">Tabla AST</button>
+      <button class="sm" data-tab="editor" aria-pressed="false">Editar pasos y controles</button>
+    </div>
+    <div id="astTabla"></div>
+    <div id="astEditor" hidden></div>
+    <div id="astEpp"></div>
+    <div id="astPlan"></div>
+    <div id="astSup"></div>
+    <p class="note" style="margin-top:24px">Documento generado con apoyo de IA; validar antes de su uso. Debe ser validado y firmado por el supervisor del área y por Seguridad Industrial.</p>
+  </div>
+</section>
+
+<section id="v-historial" hidden>
+  <p class="eyebrow">Registros</p>
+  <h1>Historial de AST</h1>
+  <p class="lead" id="histWhere"></p>
+  <div class="row" style="margin-bottom:14px"><input id="histQ" type="search" placeholder="Buscar por empresa, área o posición" style="max-width:520px"></div>
+  <div id="histList" class="hist"></div>
+</section>
+
+<section id="v-metodologia" hidden>
+  <p class="eyebrow">Referencia técnica</p>
+  <h1>Metodología de evaluación</h1>
+  <p class="lead">Riesgo Inicial RI = F × P × S (1 a 125). Riesgo Residual RR = RI × C, donde C es el factor del control aplicado de mayor jerarquía. Los cálculos los hace la plataforma con código, no el modelo de IA.</p>
+  <div class="panel"><label for="umbral">¿Requiere medida de control adicional? = "Sí" cuando RR ≥</label><div class="row"><input id="umbral" type="number" min="1" max="125" step="1" style="max-width:120px"><span class="note">Valor configurable para el AST actual (por defecto 24).</span></div></div>
+  <div id="metTablas"></div>
+</section>
+</main>
+<div id="toast" role="status"></div>
+
+<script>
+{
+/* ---------- Catálogos y metodología ---------- */
+const F_TXT={5:'Frecuente: varias veces por hora o más de 4 h al día',4:'Probable: varias veces por día; de 1 a 4 h por día',3:'Ocasional: menos de 1 h al día',2:'Raro: 1 o 2 veces por día y pocas horas al mes',1:'Improbable: solo en condiciones extraordinarias, pocos minutos'};
+const P_TXT={5:'Frecuente: lesión al manipular, mover, traspalear, izar o ensamblar un subensamble (machucón, raspadura, golpe, cortadura)',4:'Probable: lesión por el mecanismo de operación de un equipo o maquinaria (conformadoras, pórticos, guillotinas, esmeriles, huck)',3:'Ocasional: lesión por manipulación de herramientas manuales (martillos, cinceles, patas de cabra, llaves)',2:'Raro: quemadura, punción, flameado o descarga eléctrica por manipulación de equipo de soldadura',1:'Improbable: falta de 5S, escaleras, pisos, andamios, sustancias químicas, inyección de pintura o aceite, volcadura de montacargas, mesas elevadoras y otros de baja probabilidad'};
+const S_TXT={5:'Catastrófico (Tipo D, C): fatalidad, enfermedad ocupacional, lesiones serias o incapacidad permanente',4:'Crítico (Tipo B, B1): restricción, cambio de actividades o días perdidos',3:'Marginal (Tipo A1): tratamiento médico (sutura, inmovilización, inyecciones)',2:'Despreciable (Tipo A): primeros auxilios (curaciones)',1:'Insignificante: sin lesión ni enfermedad'};
+const JER={1:'Eliminación',2:'Sustitución',3:'Ingeniería',4:'Administrativo',5:'EPP'};
+const JERC={1:'Elim.',2:'Sust.',3:'Ing.',4:'Adm.',5:'EPP'};
+const FACT={1:0,2:0.10,3:0.25,4:0.50,5:0.75};
+const CAT=[['BIOLÓGICO',['Sangre/fluidos','Bacteria','Virus','Insectos/animales','Otros']],['QUÍMICO',['Polvos/fibras','Humos','Nieblas/aerosoles/vapores','Gases','Inflamables/combustibles','Corrosivos/ácidos','Thinner/xilol/MEK/aceite','Otros']],['FÍSICO',['Ruido','Vibración','Iluminación','Temperatura (calor/frío)','Radiación/láser','Cisternas/tanques/sótanos','Bordes afilados','Otros']],['MECÁNICO Y ELÉCTRICO',['Arco o flash eléctrico','Contacto con voltaje','Trabajos en alturas','Resbalones/tropiezos/caídas','Puntos de atrapamiento','Herramientas motorizadas','Caída/objetos proyectados','Vehículos/equipo en movimiento','Otros']],['ERGONÓMICO Y PSICOSOCIAL',['Equipo y herramienta adecuada','Mal diseño del entorno','Ritmo y carga de trabajo','Fuerza excesiva','Carga mayor al límite de la NOM-036-1-STPS-2018','Levantamiento de carga por arriba del hombro','Posturas incómodas','Movimientos repetitivos (más de 12 por minuto)','Espacios restringidos','Arrastre y empuje de cargas','Otros']]];
+const TIPO={};{let n=1;for(const[g,l]of CAT)for(const t of l){TIPO[n]={g,t};n++}}
+const GIROS=['Metalmecánica pesada','Fabricación de equipo ferroviario','Automotriz y autopartes','Construcción','Química y petroquímica','Alimentos y bebidas','Plásticos y hule','Minería','Energía y servicios eléctricos','Logística y almacenes','Mantenimiento industrial','Otro'];
+const REQ=[['empresa','Nombre de la empresa'],['area','Área de trabajo'],['posicion','Posición, puesto o máquina'],['fecha','Fecha de elaboración'],['supervisor','Supervisor del área']];
+const CAT_TXT=Object.entries(TIPO).map(([n,o])=>n+' '+o.t).join('; ');
+const METODO=`METODOLOGÍA (úsala EXACTAMENTE, no la sustituyas):
+Riesgo Inicial RI = F × P × S (1 a 125). La plataforma calcula RI, C y RR con código; tú solo das F, P, S y controles.
+F Frecuencia: ${Object.entries(F_TXT).reverse().map(([k,v])=>k+' '+v).join(' | ')}
+P Probabilidad: ${Object.entries(P_TXT).reverse().map(([k,v])=>k+' '+v).join(' | ')}
+S Severidad: ${Object.entries(S_TXT).reverse().map(([k,v])=>k+' '+v).join(' | ')}
+Jerarquía de controles y factor C: 1 Eliminación = 0; 2 Sustitución = 0.10; 3 Ingeniería (automatización, guardas, bloqueos, ventilación/extracción, sistemas anticaídas, cortinas de luz, barreras físicas) = 0.25; 4 Administrativo (procedimientos, capacitación, rotación, LOTO, luces y estrobos, banderero, mantenimiento, inspecciones, check list, alarmas, restricción de accesos) = 0.50; 5 EPP = 0.75.
+RR = RI × C, C = factor del control APLICADO de mayor jerarquía. Clasificación: 64-125 Muy Alto (operación no permitida); 40-63 Alto (acción inmediata); 24-39 Moderado (acción en menos de 1 semana); 1-23 Bajo (acción no inmediata).
+CATÁLOGO DE PELIGROS (usa el número): BIOLÓGICO 1-5, QUÍMICO 6-13, FÍSICO 14-21, MECÁNICO Y ELÉCTRICO 22-30, ERGONÓMICO Y PSICOSOCIAL 31-41: ${CAT_TXT}.
+LÍMITES DE CARGA MANUAL, NOM-036-1-STPS-2018, numeral 8.3 b) 2), Tabla 1: Hombres 18-45 años 25 kg; Mujeres 18-45 años 20 kg; Hombres mayores de 45 años 20 kg; Mujeres mayores de 45 años 15 kg (con aval médico de aptitud pueden llegar al límite de 18-45); menores de 18 años 7 kg. Mujeres en gestación y 10 semanas posteriores al parto: no más de 10 kg y con aval médico (8.3 b) 1)). La norma no aplica a cargas menores de 3 kg. Son límites máximos, no valores seguros: considera frecuencia, distancia, altura, agarre y postura. Si una pieza supera el límite aplicable: clasifica el peligro 35, propone ayuda mecánica (control de ingeniería) antes que capacitación o EPP. Si el texto del usuario indica otro límite, señálalo en "verificar" y usa el de la norma.
+MARCO NORMATIVO: NOM-STPS aplicables (NOM-001 edificios, NOM-002 incendios, NOM-004 maquinaria y equipo, NOM-005 sustancias peligrosas, NOM-006 manejo y almacenamiento de materiales e izaje, NOM-009 alturas, NOM-010 agentes químicos, NOM-011 ruido, NOM-013 radiaciones no ionizantes, NOM-015 condiciones térmicas, NOM-017 EPP, NOM-018 SGA, NOM-020 recipientes a presión y cilindros, NOM-022 electricidad estática, NOM-024 vibraciones, NOM-025 iluminación, NOM-026 colores y señales, NOM-027 soldadura y corte, NOM-029 mantenimiento eléctrico, NOM-030 servicios preventivos, NOM-033 espacios confinados, NOM-035 factores psicosociales, NOM-036-1 ergonomía/manejo manual de cargas). Internacionales: ISO 45001:2018, ISO 31000, IEC 31010, OSHA 29 CFR 1910 (Subparte Q soldadura, 1910.179 grúas), ANSI/ASME B30 izaje, ANSI Z49.1 soldadura. Cita solo número y nombre de la norma; numeral solo si estás seguro; si dudas escribe "(verificar)". No inventes numerales, límites ni valores. La norma mexicana prevalece; la internacional complementa.`;
+
+/* ---------- Utilidades ---------- */
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+const fmtDate=s=>{if(!s)return'';const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(s);return m?`${m[3]}/${m[2]}/${m[1]}`:s};
+const r2=n=>Math.round(n*100)/100;
+const fmtN=n=>String(r2(n));
+const uid=()=>'ast-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,7);
+const clampInt=(v,d)=>{const n=Math.round(Number(v));return n>=1&&n<=5?n:d};
+const LS={get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
+function toast(t){const el=$('#toast');el.textContent=t;el.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>el.style.display='none',3600)}
+function cls(v){if(v>=64)return{n:'Muy Alto',k:'ma',acc:'Operación no permitida'};if(v>=40)return{n:'Alto',k:'a',acc:'Acción requerida inmediatamente'};if(v>=24)return{n:'Moderado',k:'m',acc:'Acción requerida en menos de 1 semana'};return{n:'Bajo',k:'b',acc:'Acción requerida no inmediata'}}
+const chip=v=>{const c=cls(v);return`<span class="k k-${c.k}">${c.n}</span>`};
+const PLAZO={ma:'Inmediato: detener la actividad hasta controlar',a:'Inmediato',m:'Menos de 1 semana',b:'No inmediato'};
+
+/* ---------- Trazabilidad por origen, sello de estado y referencias normativas ---------- */
+// origen (opcional) en paso, riesgo y control: 'codigo' | 'ia' | 'manual'. Sin campo = registro anterior.
+const OR={codigo:['⚙','Código','Calculado por la plataforma con código'],ia:['✦','IA','Propuesto por el modelo de IA'],manual:['✎','Editado','Capturado o modificado por la persona']};
+const orig=o=>{const x=OR[o];return x?`<span class="org" title="${x[2]}"><span aria-hidden="true">${x[0]}</span> ${x[1]}</span>`:'<span class="org nr" title="AST guardado antes de registrar el origen de los datos">Origen no registrado</span>'};
+const ORT=o=>OR[o]?OR[o][1]:'Origen no registrado';
+const ORG_LEG_TXT='Origen de los datos: Código = calculado por la plataforma (RI, C, RR y clasificación); IA = propuesto por el modelo de IA; Editado = capturado o modificado por la persona; Origen no registrado = AST guardado antes de registrar el origen.';
+const markManual=o=>{if(o&&typeof o==='object')o.origen='manual'};
+const NORM_RE=/\b(NOM|NMX|ISO|IEC|OSHA|ANSI|ASME|NFPA)\b/i;
+const VN_TXT='Verificar versión vigente en DOF/STPS';
+const VN=`<span class="vn">${VN_TXT}</span>`;
+const nv=raw=>NORM_RE.test(String(raw||''))?' '+VN:'';
+const SEAL={'Borrador':['sl-b','○'],'En revisión':['sl-r','◐'],'Aprobado':['sl-a','✓']};
+const estadoOf=e=>SEAL[e]?e:'Borrador';
+const seal=e=>{e=estadoOf(e);const[c,ic]=SEAL[e];return`<span class="seal ${c}" title="Estado del documento"><span aria-hidden="true">${ic}</span>${esc(e)}</span>`};
+
+function emptyHeader(){return{empresa:'',logo:'',giro:'',giroOtro:'',planta:'',area:'',numero:'',fecha:today(),revision:'',posicion:'',supervisor:'',equipo:[],personal:{n:'',genero:'',edad:'',gestacion:false,aval45:false},codigo:'',estado:'Borrador',proxima:'',reviso:{nombre:'',puesto:''},aprobo:{nombre:'',puesto:''},cambios:[]}}
+function fixDoc(d){
+  // Compatibilidad con registros anteriores: solo garantiza tipos; no agrega "origen" para no atribuir datos que no se registraron.
+  const A=x=>Array.isArray(x)?x:[];
+  d.pasos=A(d.pasos).filter(s=>s&&typeof s==='object');
+  d.pasos.forEach(s=>{s.riesgos=A(s.riesgos).filter(r=>r&&typeof r==='object');s.riesgos.forEach(r=>{r.controles=A(r.controles).filter(c=>c&&typeof c==='object');r.controles.forEach(c=>{if(typeof c.t!=='string')c.t=String(c.t??'')});r.tipos=A(r.tipos)})});
+  ['epp','supuestos','verificar'].forEach(k=>d[k]=A(d[k]));
+  if(typeof d.actividad!=='string')d.actividad='';
+  const e=emptyHeader();d.header=Object.assign(e,d.header||{});d.header.personal=Object.assign(emptyHeader().personal,d.header.personal);['reviso','aprobo'].forEach(k=>d.header[k]=Object.assign({nombre:'',puesto:''},d.header[k]));if(!Array.isArray(d.header.cambios))d.header.cambios=[];if(!Array.isArray(d.header.equipo))d.header.equipo=[];d.config=Object.assign({umbral:24},d.config);return d}
+function newDoc(){return{id:uid(),creado:Date.now(),actualizado:Date.now(),header:emptyHeader(),config:{umbral:24},actividad:'',titulo:'',obs:null,pasos:[],epp:[],supuestos:[],verificar:[],fuentes:null}}
+let D=LS.get('ast.borrador');
+try{if(!D||typeof D!=='object'||!D.header)D=newDoc();fixDoc(D)}catch(e){console.warn('Borrador local ilegible; se inicia uno nuevo.',e);D=fixDoc(newDoc())}
+const inputs={fotos:[],video:null};
+let sampleFn=null,limits=null,downloads=null,dbCol=null,dbPrefs=null,histMode='local';
+const giro=()=>D.header.giro==='Otro'?(D.header.giroOtro||'Otro'):D.header.giro;
+
+/* ---------- Límite de carga NOM-036-1 ---------- */
+function limiteCarga(p){
+  p=p||{};
+  if(p.gestacion)return{kg:10,txt:'10 kg: mujeres en gestación o 10 semanas posteriores al parto (numeral 8.3 b) 1); masa real con aval médico',sup:false};
+  const g=p.genero,e=p.edad;
+  const t={H:{'18-45':25,mayor45:p.aval45?25:20},M:{'18-45':20,mayor45:p.aval45?20:15}};
+  const gl={H:'hombres',M:'mujeres'};
+  if(e==='menor18')return{kg:7,txt:'7 kg: menores de 18 años (Tabla 1)',sup:false};
+  if(!g&&!e)return{kg:15,txt:'15 kg: no se capturó género ni edad; se aplica el límite adulto más restrictivo (mujeres mayores de 45 años) como supuesto',sup:true};
+  const gs=g==='X'||!g?['M']:[g];
+  const es=e==='mixto'||!e?['mayor45']:[e];
+  let kg=99,who='';
+  for(const gg of gs)for(const ee of es){const v=t[gg][ee];if(v<kg){kg=v;who=gl[gg]+' '+(ee==='18-45'?'de 18 a 45 años':'mayores de 45 años')}}
+  const sup=!g||!e;
+  const extra=(g==='X'?' (población mixta: se toma el límite más restrictivo)':'')+(e==='mixto'?' (edades mixtas: se toma el límite más restrictivo)':'')+(sup?' — supuesto por dato faltante':'')+(es.includes('mayor45')&&p.aval45?' con aval médico':'');
+  return{kg,txt:`${kg} kg: ${who}${extra} (NOM-036-1-STPS-2018, Tabla 1)`,sup};
+}
+
+/* ---------- Cálculo y validación (código, no modelo) ---------- */
+function calc(r){
+  const F=clampInt(r.F,0),P=clampInt(r.P,0),S=clampInt(r.S,0);
+  const RI=F*P*S;
+  const ap=(r.controles||[]).filter(c=>c.ap&&String(c.t||'').trim());
+  const j=ap.length?Math.min(...ap.map(c=>c.j)):null;
+  const C=j==null?1:FACT[j];
+  const RR=r2(RI*C);
+  return{RI,j,C,RR,cRI:cls(RI),cRR:cls(RR),req:RR>=(Number(D.config.umbral)||24)};
+}
+function sortCtl(r){r.controles.sort((a,b)=>a.j-b.j)}
+function cargaChecks(){
+  const L=limiteCarga(D.header.personal),out=[];
+  D.pasos.forEach((s,i)=>s.riesgos.forEach((r,j)=>{
+    const w=Number(r.peso);
+    if(w>=3&&w>L.kg){out.push({i,j,w,L});if(!r.tipos.includes(35))r.tipos.push(35)}
+  }));
+  if(!out.length&&D.actividad){
+    const ms=[...D.actividad.matchAll(/(\d+(?:[.,]\d+)?)\s*kg/gi)].map(m=>parseFloat(m[1].replace(',','.'))).filter(w=>w>L.kg);
+    if(ms.length)out.push({i:-1,w:Math.max(...ms),L});
+  }
+  return{L,out};
+}
+function validate(){
+  const v=[];const ids=n=>n;
+  if(!D.pasos.length)v.push({lvl:'err',t:'El AST no tiene pasos.'});
+  D.pasos.forEach((s,i)=>{
+    if(!String(s.d||'').trim())v.push({lvl:'err',t:`Paso ${i+1}: falta la descripción.`});
+    if(!s.riesgos.length)v.push({lvl:'warn',t:`Paso ${i+1}: no tiene peligros/riesgos identificados.`});
+    s.riesgos.forEach((r,j)=>{
+      const n=`${i+1}.${j+1}`,c=calc(r);
+      if(![r.F,r.P,r.S].every(x=>clampInt(x,0)))v.push({lvl:'err',t:`Riesgo ${n}: F, P y S deben ser enteros de 1 a 5.`});
+      if(c.RI!==clampInt(r.F,0)*clampInt(r.P,0)*clampInt(r.S,0))v.push({lvl:'err',t:`Riesgo ${n}: RI no coincide con F×P×S.`});
+      if(c.j==null)v.push({lvl:'err',t:`Riesgo ${n}: no tiene ningún control aplicado. RR se deja igual a RI (C = 1).`});
+      else if(c.C!==FACT[c.j])v.push({lvl:'err',t:`Riesgo ${n}: C no coincide con el control de mayor jerarquía.`});
+      if(Math.abs(c.RR-r2(c.RI*c.C))>0.001)v.push({lvl:'err',t:`Riesgo ${n}: RR no coincide con RI×C.`});
+      if(!r.tipos.length)v.push({lvl:'warn',t:`Riesgo ${n}: sin tipo de peligro del catálogo.`});
+      const bad=r.tipos.filter(t=>!TIPO[t]);if(bad.length)v.push({lvl:'warn',t:`Riesgo ${n}: tipo(s) fuera del catálogo: ${bad.join(', ')}.`});
+      if((r.controles||[]).length&&!(r.controles||[]).some(x=>x.j<=4&&String(x.t).trim()))v.push({lvl:'warn',t:`Riesgo ${n}: solo tiene EPP; propón al menos un control por encima del EPP si es técnicamente viable.`});
+      if(c.req&&!(r.controles||[]).some(x=>x.j<=3&&String(x.t).trim()))v.push({lvl:'warn',t:`Riesgo ${n}: RR ${fmtN(c.RR)} requiere medida adicional; considera en el plan de acción un control de ingeniería, sustitución o eliminación.`});
+    });
+  });
+  return v;
+}
+
+/* ---------- Normalizar la respuesta de la IA ---------- */
+function normalize(js){
+  const arr=x=>Array.isArray(x)?x:[];
+  const pasos=arr(js.pasos).slice(0,30).map(p=>({d:String(p.descripcion||p.d||'').trim(),origen:'ia',riesgos:arr(p.riesgos).map(r=>{
+    const R={origen:'ia',peligro:String(r.peligro||'').trim(),tipos:arr(r.tipos).map(Number).filter(n=>Number.isInteger(n)),F:clampInt(r.F,5),P:clampInt(r.P,5),S:clampInt(r.S,5),
+      just:String(r.justificacion||''),evid:String(r.evidencia||''),peso:r.peso_kg==null||r.peso_kg===''?'':Number(r.peso_kg)||'',
+      controles:arr(r.controles).map(c=>({t:String(c.texto||c.t||'').trim(),j:clampInt(c.jerarquia,5),ap:c.estado?String(c.estado).toLowerCase()!=='propuesto':c.aplicado!==false,origen:'ia'})).filter(c=>c.t),
+      norma:String(r.normas||r.norma||''),accion:String(r.accion_adicional||''),resp:String(r.responsable||'')};
+    sortCtl(R);return R;})}));
+  const o=js.observaciones||{};
+  return{titulo:String(js.titulo_actividad||''),pasos,epp:arr(js.epp).map(String),supuestos:arr(js.supuestos).map(String),verificar:arr(js.verificar).map(String),
+    obs:{calidad:String(o.calidad||''),observado:arr(o.observado).map(String),inferido:arr(o.inferido).map(String),cond:arr(o.condiciones_inseguras).map(String),actos:arr(o.actos_inseguros).map(String)}};
+}
+
+/* ---------- Persistencia ---------- */
+let saveT;
+function touch(){D.actualizado=Date.now();clearTimeout(saveT);saveT=setTimeout(()=>{LS.set('ast.borrador',D);renderStrip()},400)}
+function rememberHeader(){
+  const h=JSON.parse(JSON.stringify(D.header));h.numero='';h.revision='';h.fecha='';h.estado='Borrador';h.proxima='';h.cambios=[];
+  LS.set('ast.ultimos',h);
+  if(dbPrefs)dbPrefs.set({header:h,t:Date.now()}).catch(()=>{});
+}
+async function lastHeader(){
+  if(dbPrefs){try{const s=await dbPrefs.get();if(s.exists&&s.data().header)return s.data().header}catch(e){}}
+  return LS.get('ast.ultimos');
+}
+
+function stats(){
+  const all=[];D.pasos.forEach((s,i)=>s.riesgos.forEach((r,j)=>all.push({i,j,r,c:calc(r)})));
+  const maxRI=all.reduce((m,x)=>!m||x.c.RI>m.c.RI?x:m,null),maxRR=all.reduce((m,x)=>!m||x.c.RR>m.c.RR?x:m,null);
+  const sRI=all.reduce((a,x)=>a+x.c.RI,0),sRR=all.reduce((a,x)=>a+x.c.RR,0);
+  const dist={ri:{ma:0,a:0,m:0,b:0},rr:{ma:0,a:0,m:0,b:0}};all.forEach(x=>{dist.ri[x.c.cRI.k]++;dist.rr[x.c.cRR.k]++});
+  return{all,maxRI,maxRR,pct:sRI?Math.round((1-sRR/sRI)*100):0,req:all.filter(x=>x.c.req).length,ma:all.filter(x=>x.c.RR>=64),dist};
+}
+function renderStrip(){
+  const h=D.header,miss=missingReq(),has=D.pasos.length>0,act=!!(D.actividad.trim()||inputs.fotos.length||inputs.video||has);
+  const v=has?validate():[],er=v.filter(x=>x.lvl==='err').length,wr=v.length-er;
+  // Los mismos 3 pasos, con el mismo número y nombre, que el menú y los eyebrows (STEPS).
+  const S=[
+    [act?'done':'',act?'capturada':'pendiente'],
+    [miss.length?'warn':'done',miss.length?`faltan ${miss.length} obligatorio(s)`:'completos'],
+    [!has?'':er?'bad':wr?'warn':'done',!has?'pendiente':`${D.pasos.length} pasos · ${er?er+' error(es)':wr?wr+' aviso(s)':'validación correcta'}`]];
+  const cur=location.hash.slice(1);
+  $('#strip').innerHTML=STEPS.map(([v2,t],n)=>{const[st,sub]=S[n];return`${n?'<span class="sep" aria-hidden="true"></span>':''}<a class="stp ${st}" href="#${v2}"${cur===v2||(!cur&&!n)?' aria-current="step"':''}><i aria-hidden="true">${n+1}</i><span><span class="vh">Paso ${n+1}: </span>${t} <small>· ${esc(sub)}</small></span></a>`}).join('')+`<span class="sep" aria-hidden="true"></span><a class="stp" href="#datos" title="Estado del documento (se cambia en Paso 2)">${seal(h.estado)}</a>`;
+  $('#docchip').innerHTML=`<span>${esc(h.numero?'AST '+h.numero:'AST sin número')} · Rev. ${esc(h.revision||'—')}</span>${seal(h.estado)}`;
+}
+const STEPS=[['nuevo','Actividad'],['datos','Datos del AST'],['ast','Revisión y exportación']];
+
+/* ---------- Vistas ---------- */
+const VIEWS=['nuevo','datos','ast','historial','metodologia'];
+function route(){
+  const v=VIEWS.includes(location.hash.slice(1))?location.hash.slice(1):'nuevo';
+  VIEWS.forEach(x=>$('#v-'+x).hidden=x!==v);
+  $$('#nav a').forEach(a=>{if(a.dataset.v===v)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});
+  renderStrip();
+  if(v==='nuevo')renderNuevo();if(v==='datos')renderDatos();if(v==='ast')renderAST();if(v==='historial')renderHist();if(v==='metodologia')renderMet();
+  window.scrollTo(0,0);
+}
+window.addEventListener('hashchange',route);
+
+function missingReq(){return REQ.filter(([k])=>!String(D.header[k]||'').trim()).map(x=>x[1])}
+function renderNuevo(){
+  $('#inTexto').value=D.actividad||'';
+  const miss=missingReq();
+  const ctx=[['Giro',giro()],['Área',D.header.area],['Posición',D.header.posicion]].filter(x=>x[1]);
+  $('#hdrStatus').innerHTML=miss.length?`<div class="alert warn"><strong>Datos del AST incompletos</strong>Faltan para exportar: ${esc(miss.join(', '))}. Puedes analizar ahora y capturarlos después; con giro, área y posición el análisis se adapta mejor. <a href="#datos">Ir a Paso 2 · Datos del AST</a></div>`:`<div class="alert ok"><strong>Datos del AST completos</strong>${esc(ctx.map(x=>x[0]+': '+x[1]).join(' · '))}</div>`;
+  $('#replaceNote').textContent=D.pasos.length?'El AST actual tiene contenido; un nuevo análisis reemplazará sus pasos (los datos del encabezado se conservan). Usa "Nuevo AST" en Paso 3 · Revisión y exportación para empezar desde cero.':'';
+  renderThumbs();
+}
+function renderThumbs(){
+  $('#fotoThumbs').innerHTML=inputs.fotos.map((f,i)=>`<div class="thumb"><img src="${f.url}" alt="Foto ${i+1}"><span>Foto ${i+1}</span><button type="button" data-delfoto="${i}" aria-label="Quitar foto ${i+1}">×</button></div>`).join('');
+  $('#cFotos').classList.toggle('on',inputs.fotos.length>0);
+  const v=inputs.video;
+  $('#cVideo').classList.toggle('on',!!v);
+  $('#videoInfo').innerHTML=v?(v.busy?'Extrayendo fotogramas…':`${esc(v.name)} · ${mmss(v.dur)} · ${v.frames.length} fotogramas <button type="button" class="sm x" id="delVideo">Quitar</button>`):'';
+  $('#frameThumbs').innerHTML=v?v.frames.map(f=>`<div class="thumb"><img src="${f.url}" alt="Fotograma ${mmss(f.t)}"><span>${mmss(f.t)}</span></div>`).join(''):'';
+  $('#cTexto').classList.toggle('on',!!$('#inTexto').value.trim());
+}
+const mmss=t=>{t=Math.floor(t||0);return String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0')};
+
+/* ---------- Datos del AST ---------- */
+function renderDatos(){
+  const h=D.header;
+  $('#h_giro').innerHTML='<option value="">Selecciona…</option>'+GIROS.map(g=>`<option ${h.giro===g?'selected':''}>${esc(g)}</option>`).join('');
+  $$('[data-h]').forEach(el=>{if(el.tagName!=='SELECT')el.value=h[el.dataset.h]||''});
+  $('#h_estado').value=h.estado||'Borrador';
+  $$('[data-h2]').forEach(el=>{const[a,b]=el.dataset.h2.split('.');el.value=h[a][b]||''});
+  renderCambios();
+  $('#giroOtroBox').hidden=h.giro!=='Otro';
+  $$('[data-p]').forEach(el=>{const k=el.dataset.p;if(el.type==='checkbox')el.checked=!!h.personal[k];else el.value=h.personal[k]||''});
+  $('#logoPrev').innerHTML=h.logo?`<img src="${h.logo}" alt="Logotipo" style="max-height:60px;max-width:160px;margin-top:8px"><button type="button" class="sm x" id="delLogo">Quitar logotipo</button>`:'';
+  renderEquipo();renderLimite();
+  lastHeader().then(l=>{$('#btnUltimos').hidden=!l||!l.empresa;$('#ultimosNote').textContent=l&&l.empresa?`Últimos datos: ${l.empresa}${l.area?' · '+l.area:''}`:''});
+}
+function renderEquipo(){
+  const eq=D.header.equipo;
+  $('#equipo').innerHTML=eq.length?eq.map((m,i)=>`<div class="grid" style="margin-bottom:10px;align-items:end"><div><label for="eqn${i}">Nombre</label><input id="eqn${i}" data-eq="${i}" data-k="nombre" value="${esc(m.nombre)}"></div><div><label for="eqp${i}">Puesto</label><input id="eqp${i}" data-eq="${i}" data-k="puesto" value="${esc(m.puesto)}"></div><div><span class="note">Firma: espacio en el formato exportado</span><br><button type="button" class="sm x" data-deleq="${i}">Quitar integrante</button></div></div>`).join(''):'<p class="note">Sin integrantes. Agrega a quienes elaboran el AST.</p>';
+}
+function renderCambios(){
+  const cb=D.header.cambios;
+  $('#cambios').innerHTML=cb.length?cb.map((c,i)=>`<div class="grid cbrow" style="margin-bottom:10px;align-items:end"><div><label for="cbf${i}">Fecha</label><input id="cbf${i}" type="date" data-cb="${i}" data-k="fecha" value="${esc(c.fecha)}"></div><div><label for="cbr${i}">Revisión</label><input id="cbr${i}" data-cb="${i}" data-k="rev" value="${esc(c.rev)}"></div><div><label for="cbd${i}">Descripción del cambio</label><input id="cbd${i}" data-cb="${i}" data-k="desc" value="${esc(c.desc)}"></div><button type="button" class="sm x" data-delcb="${i}">Quitar</button></div>`).join(''):'<p class="note">Sin registros. Agrega uno por cada revisión del documento.</p>';
+}
+function renderLimite(){const L=limiteCarga(D.header.personal);$('#limiteBox').innerHTML=`<strong>Límite de carga manual aplicable: ${L.kg} kg</strong>${esc(L.txt)}. La NOM-036-1-STPS-2018 no aplica a cargas menores de 3 kg; son límites máximos, no valores seguros. ${VN}`}
+
+$('#fDatos').addEventListener('input',e=>{
+  const el=e.target,h=D.header;
+  if(el.dataset.h&&el.type!=='file'){h[el.dataset.h]=el.value;if(el.dataset.h==='giro')$('#giroOtroBox').hidden=el.value!=='Otro'}
+  if(el.dataset.p){h.personal[el.dataset.p]=el.type==='checkbox'?el.checked:el.value;renderLimite()}
+  if(el.dataset.eq!=null){h.equipo[+el.dataset.eq][el.dataset.k]=el.value}
+  if(el.dataset.h2){const[a,b]=el.dataset.h2.split('.');h[a][b]=el.value}
+  if(el.dataset.cb!=null){h.cambios[+el.dataset.cb][el.dataset.k]=el.value}
+  touch();
+});
+$('#fDatos').addEventListener('change',e=>{if(e.target.dataset.h==='estado'){D.header.estado=e.target.value;renderStrip();touch();return}if(e.target.dataset.p||e.target.dataset.h==='giro'){const el=e.target;if(el.dataset.p)D.header.personal[el.dataset.p]=el.type==='checkbox'?el.checked:el.value;else D.header.giro=el.value;renderLimite();touch()}});
+$('#fDatos').addEventListener('submit',e=>e.preventDefault());
+$('#addCambio').onclick=()=>{D.header.cambios.push({fecha:today(),rev:D.header.revision||'',desc:''});renderCambios();touch();$('#cbd'+(D.header.cambios.length-1)).focus()};
+$('#cambios').addEventListener('click',e=>{const b=e.target.closest('[data-delcb]');if(b){D.header.cambios.splice(+b.dataset.delcb,1);renderCambios();touch()}});
+$('#addMiembro').onclick=()=>{D.header.equipo.push({nombre:'',puesto:''});renderEquipo();touch();$('#eqn'+(D.header.equipo.length-1)).focus()};
+$('#equipo').addEventListener('click',e=>{const b=e.target.closest('[data-deleq]');if(b){D.header.equipo.splice(+b.dataset.deleq,1);renderEquipo();touch()}});
+$('#logoPrev').addEventListener('click',e=>{if(e.target.id==='delLogo'){D.header.logo='';renderDatos();touch()}});
+$('#h_logo').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{D.header.logo=await toDataURL(f,360,'image/png');touch();renderDatos()}catch(err){toast('No se pudo leer la imagen del logotipo.')}e.target.value=''};
+$('#btnUltimos').onclick=async()=>{const l=await lastHeader();if(!l)return;const keep={numero:D.header.numero,fecha:D.header.fecha||today(),revision:D.header.revision};D.header=Object.assign(emptyHeader(),JSON.parse(JSON.stringify(l)),keep);fixDoc(D);touch();renderDatos();toast('Se cargaron los últimos datos; revísalos y edítalos.')};
+
+/* ---------- Imágenes ---------- */
+async function loadImg(blob){if('createImageBitmap' in window){try{return await createImageBitmap(blob)}catch(e){}}return await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=URL.createObjectURL(blob)})}
+async function toCanvasBlob(src,max,type,q){const w=src.width||src.videoWidth,h=src.height||src.videoHeight;const s=Math.min(1,max/Math.max(w,h));const c=document.createElement('canvas');c.width=Math.round(w*s);c.height=Math.round(h*s);c.getContext('2d').drawImage(src,0,0,c.width,c.height);return await new Promise(r=>c.toBlob(r,type,q))}
+async function toDataURL(file,max,type){const im=await loadImg(file);const b=await toCanvasBlob(im,max,type,.9);return await new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result);fr.readAsDataURL(b)})}
+$('#inFotos').onchange=async e=>{
+  for(const f of e.target.files){try{const im=await loadImg(f);const b=await toCanvasBlob(im,1600,'image/jpeg',.85);inputs.fotos.push({name:f.name,blob:b,url:URL.createObjectURL(b)})}catch(err){toast(`No se pudo leer ${f.name}. Usa JPG o PNG.`)}}
+  e.target.value='';renderThumbs();
+};
+$('#fotoThumbs').addEventListener('click',e=>{const b=e.target.closest('[data-delfoto]');if(b){inputs.fotos.splice(+b.dataset.delfoto,1);renderThumbs()}});
+$('#cVideo').addEventListener('click',e=>{if(e.target.id==='delVideo'){inputs.video=null;renderThumbs()}});
+const once=(el,ev,ms=8000)=>new Promise((res,rej)=>{const t=setTimeout(()=>rej(new Error('timeout')),ms);el.addEventListener(ev,()=>{clearTimeout(t);res()},{once:true})});
+$('#inVideo').onchange=async e=>{
+  const f=e.target.files[0];e.target.value='';if(!f)return;
+  inputs.video={name:f.name,dur:0,frames:[],busy:true};renderThumbs();
+  try{
+    const v=document.createElement('video');v.muted=true;v.playsInline=true;v.preload='auto';v.src=URL.createObjectURL(f);
+    await once(v,'loadedmetadata',15000);
+    let dur=v.duration;
+    if(!isFinite(dur)){v.currentTime=1e7;await once(v,'seeked');dur=v.duration;}
+    if(!isFinite(dur)||!dur)throw new Error('dur');
+    if(v.readyState<2){v.currentTime=0;await once(v,'seeked').catch(()=>{})}
+    const frames=[];
+    for(let t=0;t<dur&&frames.length<20;t+=2){
+      v.currentTime=Math.min(t,Math.max(0,dur-0.05));await once(v,'seeked');
+      const b=await toCanvasBlob(v,1024,'image/jpeg',.8);if(b)frames.push({t,blob:b,url:URL.createObjectURL(b)});
+    }
+    inputs.video={name:f.name,dur,frames,busy:false};
+    if(dur>40)toast('Video de más de 40 s: se tomaron los primeros 20 fotogramas (hasta 00:38).');
+  }catch(err){inputs.video=null;toast('No se pudo leer el video en este navegador. Prueba con MP4 (H.264) o sube fotos.')}
+  renderThumbs();
+};
+$('#inTexto').addEventListener('input',e=>{D.actividad=e.target.value;$('#cTexto').classList.toggle('on',!!e.target.value.trim());touch()});
+
+/* ---------- IA ---------- */
+function gatherImages(){
+  const max=limits&&limits.images?limits.images.maxCount:0;
+  const items=[...inputs.fotos.map((f,i)=>({blob:f.blob,label:`Foto ${i+1} (${f.name})`})),...(inputs.video?inputs.video.frames.map(f=>({blob:f.blob,label:`Fotograma de video ${mmss(f.t)}`,t:f.t})):[])];
+  if(items.length<=max)return{items,dropped:0};
+  const fotos=items.filter(x=>x.t==null).slice(0,max),room=max-fotos.length,frames=items.filter(x=>x.t!=null);
+  let pick=[];if(room>0){const step=frames.length/room;for(let k=0;k<room;k++)pick.push(frames[Math.floor(k*step)])}
+  return{items:[...fotos,...pick],dropped:items.length-fotos.length-pick.length};
+}
+function contexto(){
+  const h=D.header,p=h.personal,L=limiteCarga(p);
+  const gen={H:'hombres',M:'mujeres',X:'mixto (hombres y mujeres)'}[p.genero]||'sin capturar';
+  const ed={menor18:'menores de 18',['18-45']:'18 a 45 años',mayor45:'mayores de 45',mixto:'mixto (18 a más de 45)'}[p.edad]||'sin capturar';
+  return`DATOS CAPTURADOS POR EL USUARIO (no inventes ni completes datos de encabezado):
+Giro o industria: ${giro()||'sin capturar'}
+Área de trabajo: ${h.area||'sin capturar'}
+Posición, puesto o máquina: ${h.posicion||'sin capturar'}
+Personal expuesto: ${p.n||'número sin capturar'} trabajador(es); género: ${gen}; edad: ${ed}${p.gestacion?'; incluye mujeres en gestación o posparto (10 semanas)':''}${p.aval45?'; mayores de 45 con aval médico':''}
+Límite de carga manual aplicable calculado por la plataforma: ${L.txt}`;
+}
+function preguntaPrompt(imgs){
+  return`Eres Ingeniero Senior en Seguridad e Higiene Industrial (20+ años en metalmecánica pesada; NOM-STPS, ISO 45001, OSHA). Antes de elaborar un Análisis de Seguridad en el Trabajo (AST), revisa si faltan datos CRÍTICOS para evaluar: frecuencia o duración de la tarea, peso de piezas, tipo de grúa o herramienta, altura de trabajo, EPP actual, género y edad del personal. No preguntes lo que ya está en los datos, en la descripción o se ve claramente en las imágenes.
+${contexto()}
+DESCRIPCIÓN DEL USUARIO:
+${D.actividad.trim()||'(sin descripción escrita)'}
+${imgs.length?`IMÁGENES ADJUNTAS EN ORDEN: ${imgs.map((x,i)=>(i+1)+') '+x.label).join('; ')}`:'Sin imágenes.'}
+Responde SOLO con JSON: {"preguntas":["pregunta puntual 1","…"]} con un máximo de 3 preguntas cortas en español, ordenadas por impacto en la evaluación. Si la información basta, responde {"preguntas":[]}.`;
+}
+function analisisPrompt(imgs,qa,dropped){
+  return`ROL: Ingeniero Senior en Seguridad e Higiene Industrial con más de 20 años en industria manufacturera y metalmecánica pesada (corte, armado, soldadura, esmerilado, izaje, pintura, mantenimiento y manejo de materiales). Dominas la normatividad STPS, ISO 45001:2018 y OSHA.
+TAREA: elabora el Análisis de Seguridad en el Trabajo (AST) de la actividad: divide en pasos secuenciales, identifica peligros y riesgos, evalúa F, P y S con la metodología exacta de abajo y propone controles según la jerarquía de controles.
+${contexto()}
+DESCRIPCIÓN DEL USUARIO:
+${D.actividad.trim()||'(sin descripción escrita; reconstruye la actividad a partir de las imágenes)'}
+${qa.length?'RESPUESTAS DEL USUARIO A PREGUNTAS PREVIAS:\n'+qa.map(x=>'- '+x.q+' → '+(x.a||'(sin respuesta: supón un valor conservador y decláralo en "supuestos")')).join('\n'):''}
+${imgs.length?`IMÁGENES ADJUNTAS EN ESTE ORDEN: ${imgs.map((x,i)=>(i+1)+') '+x.label).join('; ')}.${dropped?` (Se omitieron ${dropped} fotogramas por el límite de imágenes; decláralo en supuestos.)`:''}
+Para fotos: describe primero lo observado de forma objetiva (personas, postura, EPP presente o ausente, herramientas, equipos, cargas suspendidas, orden y limpieza, guardas, cables y mangueras, señalización). Separa "observado" de "inferido"; nunca afirmes algo que no se vea. Separa condiciones inseguras de actos inseguros. Si la imagen es de baja calidad o no muestra la actividad completa, dilo en "calidad" y pide otra toma.
+Para fotogramas de video: reconstruye la secuencia de pasos y cita el segundo en que se observa cada peligro en "evidencia" (ej. "00:14 – mano bajo carga suspendida").`:'No hay imágenes: deja "observaciones" con listas vacías.'}
+${METODO}
+REGLAS DE REDACCIÓN:
+- Pasos con verbo en infinitivo o presente, como en un AST de planta ("Trasladar tapa a rack con grúa viajera e imán").
+- Peligro/riesgo: mecanismo de lesión y región anatómica ("Golpes, contusiones y machucones en manos por manipulación de placa").
+- Controles concretos, verificables, en imperativo ("Revisar y llenar el checklist de grúa antes del izaje"; nunca "tener cuidado"). Ordénalos de mayor a menor jerarquía. Propón al menos un control por encima del EPP cuando sea técnicamente viable.
+- Cuando aplique usa controles típicos: checklist de grúa, revisión de elementos de izaje, prueba de nivelación a 15 cm, venteo con lazo y silbato, prohibido tocar la carga con la mano, nadie bajo la carga, manos fuera de la línea de fuego, extracción de humos, prueba de sellado del respirador, arrestaflamas, presiones de trabajo de acetileno, guardas de pulidor y disco en buen estado.
+- Adapta los controles al giro, área y posición capturados.
+- "estado" de cada control: "aplicado" si se aplica con los recursos disponibles al iniciar la tarea (procedimientos, inspecciones, EPP) o si la descripción o imagen muestra que existe; los de ingeniería, sustitución o eliminación que no estén evidenciados van como "propuesto" (la plataforma no los cuenta en C hasta que el usuario confirme que existen). Declara en "supuestos" lo que supongas.
+- No minimices riesgos: ante la duda entre dos valores de F, P o S, elige el más conservador y explícalo en "justificacion".
+- Si una pieza tiene peso conocido o estimable, ponlo en "peso_kg".
+- Normas: número y nombre; numeral solo si estás seguro; si no, "(verificar)".
+- Si falta un dato crítico, supón un valor conservador y decláralo en "supuestos"; lo que el usuario debe confirmar va en "verificar".
+- Sé conciso: máximo 12 pasos, 1 a 4 riesgos por paso y 2 a 7 controles por riesgo.
+FORMATO: responde SOLO con un objeto JSON válido, sin texto antes ni después, con esta forma:
+{"titulo_actividad":"texto corto","observaciones":{"calidad":"","observado":["Foto 1: …","00:14 – …"],"inferido":[],"condiciones_inseguras":[],"actos_inseguros":[]},"pasos":[{"descripcion":"…","riesgos":[{"peligro":"…","tipos":[26],"F":4,"P":5,"S":4,"justificacion":"…","evidencia":"","peso_kg":null,"controles":[{"texto":"…","jerarquia":3,"estado":"propuesto"},{"texto":"…","jerarquia":4,"estado":"aplicado"}],"normas":"NOM-006-STPS-2014 …","accion_adicional":"acción concreta si el riesgo residual queda moderado o mayor","responsable":"puesto sugerido"}]}],"epp":["…"],"supuestos":["…"],"verificar":["…"]}
+jerarquia: 1 Eliminación, 2 Sustitución, 3 Ingeniería, 4 Administrativo, 5 EPP. F, P y S: enteros de 1 a 5.`;
+}
+const ERR={not_granted:'No se dio permiso para usar Claude en esta página. Puedes capturar el AST manualmente.',sampling_disabled:'Claude no está disponible para esta cuenta u organización.',rate_limited:'Se alcanzó un límite de uso. Espera un momento e inténtalo de nuevo.',session_expired:'Tu sesión expiró. Vuelve a iniciar sesión e inténtalo de nuevo.',image_rejected:'Una imagen fue rechazada (tipo o tamaño). Quita esa imagen o usa JPG/PNG.',images_unavailable:'Esta vista no puede enviar imágenes al asistente; analiza solo con texto.',refused:'El asistente no pudo procesar esta solicitud. Revisa la descripción o las imágenes.',invalid_json:'La respuesta llegó incompleta o con formato inválido. Inténtalo de nuevo o divide la actividad en partes más cortas.',empty_completion:'El asistente no devolvió contenido. Simplifica la descripción e inténtalo de nuevo.',prompt_too_large:'La descripción es demasiado larga. Resúmela o divídela.',upstream_error:'Falló la conexión con el asistente. Inténtalo de nuevo.'};
+let ctl=null,pendingQ=null;
+function setMsg(html){$('#aiMsg').innerHTML=html}
+const STAGES=['Verificar datos críticos','Analizar descripción y evidencia','Elaborar pasos, peligros y controles','Calcular y validar con la metodología'];
+function progress(on,st){if(!on){$('#progreso').innerHTML='';return}if(!$('#stages'))$('#progreso').innerHTML=`<div class="panel"><h2>Análisis en curso</h2><ol class="stages" id="stages">${STAGES.map(t=>`<li><i></i>${t}</li>`).join('')}</ol><p class="note" id="progTxt">El primer resultado puede tardar de 30 s a 2 min.</p><button class="sm" id="btnStop">Detener</button></div>`;$$('#stages li').forEach((li,n)=>li.className=n<st?'ok':n===st?'on':'')}
+$('#progreso').addEventListener('click',e=>{if(e.target.id==='btnStop'&&ctl)ctl.abort()});
+async function analizar(){
+  setMsg('');$('#preguntas').innerHTML='';
+  if(!sampleFn){setMsg('<div class="alert warn"><strong>Asistente de IA no disponible en esta vista</strong>Abre la plataforma en claude.ai para usar el análisis con IA, o captura el AST manualmente.</div>');return}
+  const {items}=gatherImages();
+  if(!D.actividad.trim()&&!items.length){setMsg('<div class="alert warn"><strong>Falta información</strong>Describe la actividad, sube al menos una foto o un video.</div>');return}
+  if(inputs.video&&inputs.video.busy){toast('Espera a que terminen de extraerse los fotogramas.');return}
+  $('#btnAnalizar').disabled=true;
+  progress(false);progress(true,0);
+  ctl=new AbortController();
+  try{
+    const r=await sampleFn.json(preguntaPrompt(items),{images:items.length?items.map(x=>x.blob):undefined,modelTier:'quick',signal:ctl.signal,cache:false});
+    const qs=(r&&Array.isArray(r.preguntas)?r.preguntas:[]).map(String).filter(Boolean).slice(0,3);
+    progress(false);
+    if(qs.length){pendingQ=qs;renderPreguntas();$('#btnAnalizar').disabled=false;return}
+    await analisisFinal([]);
+  }catch(e){progress(false);$('#btnAnalizar').disabled=false;if(e&&e.code!=='cancelled')setMsg(`<div class="alert warn"><strong>No se pudo revisar la información</strong>${esc(ERR[e&&e.code]||ERR.upstream_error)}</div>`)}
+}
+function renderPreguntas(){
+  $('#preguntas').innerHTML=`<div class="panel"><h3>Antes de evaluar, el asistente necesita confirmar:</h3>${pendingQ.map((q,i)=>`<div style="margin:12px 0"><label for="q${i}">${i+1}. ${esc(q)}</label><input id="q${i}" data-q="${i}"></div>`).join('')}<div class="row"><button class="pri" id="btnResp">Responder y analizar</button><button id="btnIgual">Analizar de todos modos</button></div><p class="note">"Analizar de todos modos" usa valores conservadores y los declara como supuestos.</p></div>`;
+  $('#q0')&&$('#q0').focus();
+}
+$('#preguntas').addEventListener('click',e=>{
+  if(e.target.id==='btnResp'){const qa=pendingQ.map((q,i)=>({q,a:$('#q'+i).value.trim()}));analisisFinal(qa)}
+  if(e.target.id==='btnIgual')analisisFinal(pendingQ.map(q=>({q,a:''})));
+});
+async function analisisFinal(qa){
+  $('#preguntas').innerHTML='';$('#btnAnalizar').disabled=true;setMsg('');
+  const {items,dropped}=gatherImages();
+  progress(true,1);ctl=new AbortController();
+  try{
+    const js=await sampleFn.json(analisisPrompt(items,qa,dropped),{images:items.length?items.map(x=>x.blob):undefined,modelTier:$('#deep').checked?'complex':'default',signal:ctl.signal,cache:false,
+      onText:({text})=>{progress(true,2);const el=$('#progTxt');if(el)el.textContent=`Recibiendo análisis… ${(text.match(/"descripcion"/g)||[]).length} pasos, ${(text.match(/"peligro"/g)||[]).length} riesgos`}});
+    progress(true,3);const n=normalize(js||{});
+    if(!n.pasos.length)throw{code:'empty_completion'};
+    Object.assign(D,{titulo:n.titulo,pasos:n.pasos,epp:n.epp,supuestos:n.supuestos,verificar:n.verificar,obs:(items.length?n.obs:null),fuentes:{texto:!!D.actividad.trim(),fotos:inputs.fotos.length,video:inputs.video?Math.round(inputs.video.dur):0,qa}});
+    if(dropped)D.supuestos.push(`Se omitieron ${dropped} fotogramas del video por el límite de imágenes por consulta.`);
+    const L=limiteCarga(D.header.personal);if(L.sup)D.supuestos.push('Límite de carga: '+L.txt+'.');
+    touch();progress(false);$('#btnAnalizar').disabled=false;location.hash='#ast';
+  }catch(e){progress(false);$('#btnAnalizar').disabled=false;if(e&&e.code!=='cancelled')setMsg(`<div class="alert warn"><strong>No se pudo generar el AST</strong>${esc(ERR[e&&e.code]||ERR.upstream_error)}</div>`)}
+}
+$('#btnAnalizar').onclick=analizar;
+$('#btnManual').onclick=()=>{if(!D.pasos.length)D.pasos=[blankStep()];touch();tab='editor';if(location.hash==='#ast')route();else location.hash='#ast'};
+const blankCtl=()=>({t:'',j:4,ap:true,origen:'manual'});
+const blankRisk=()=>({origen:'manual',peligro:'',tipos:[],F:3,P:3,S:3,just:'',evid:'',peso:'',controles:[blankCtl()],norma:'',accion:'',resp:''});
+const blankStep=()=>({d:'',origen:'manual',riesgos:[blankRisk()]});
+
+/* ---------- Vista AST ---------- */
+let tab='tabla';
+function setTab(t){tab=t;$$('#astTabs button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.tab===t));$('#astTabla').hidden=t!=='tabla';$('#astEditor').hidden=t!=='editor';if(t==='editor')renderEditor();else renderTabla()}
+$('#astTabs').addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(b)setTab(b.dataset.tab)});
+function renderAST(){
+  const has=D.pasos.length>0;
+  $('#astBody').hidden=!has;
+  $('#astEmpty').innerHTML=has?'':`<p class="eyebrow">Paso 3 · Revisión y exportación</p><h1>Aún no hay análisis: empieza en Paso 1</h1><p class="lead">Describe la actividad o sube fotos o video en Paso 1, abre un AST guardado desde el historial o captúralo manualmente.</p><div class="row"><a class="btn pri" href="#nuevo">Ir a Paso 1 · Actividad</a><a class="btn" href="#historial">Historial</a></div>`;
+  if(!has)return;
+  $('#astTitle').textContent=D.titulo||D.header.posicion||'AST';expMsg('');
+  renderHead();renderDerived();setTab(tab);
+}
+const val=v=>v?esc(v):'<span class="nd">Sin capturar</span>';
+function persTxt(p){return[p.n?p.n+' trabajador(es)':'',{H:'Hombres',M:'Mujeres',X:'Mixto'}[p.genero],{menor18:'menores de 18',['18-45']:'18 a 45 años',mayor45:'mayores de 45',mixto:'edad mixta'}[p.edad]].filter(Boolean).join(' · ')}
+function renderHead(){
+  const h=D.header,L=limiteCarga(h.personal);
+  const F=[['Empresa',h.empresa],['Giro',giro()],['Planta o sitio',h.planta],['Área de trabajo',h.area],['Posición / puesto / máquina',h.posicion],['Supervisor del área',h.supervisor],['Personal expuesto',persTxt(h.personal)],['Límite de carga aplicable',L.kg+' kg'+(L.sup?' (supuesto)':'')],['Equipo evaluador',h.equipo.filter(m=>m.nombre).map(m=>m.nombre+(m.puesto?' ('+m.puesto+')':'')).join(', ')]];
+  const C=[['Código',h.codigo],['No. de AST',h.numero],['Revisión',h.revision],['Fecha',fmtDate(h.fecha)],['Estado',null],['Próxima revisión',fmtDate(h.proxima)]];
+  $('#astHead').innerHTML=`<div class="hdr"><div class="lg">${h.logo?`<img src="${h.logo}" alt="Logotipo">`:'<span class="nd">Sin logotipo</span>'}</div><div><p class="ttl">ANÁLISIS DE SEGURIDAD EN EL TRABAJO (AST)</p><dl>${F.map(([k,v])=>`<div><dt>${k}</dt><dd>${val(v)}</dd></div>`).join('')}</dl><a href="#datos" class="note noprint">Editar en Paso 2 · Datos del AST</a></div><div class="ctrl">${C.map(([k,v])=>`<div><span>${k}</span>${v===null?seal(h.estado):`<b>${v?esc(v):'—'}</b>`}</div>`).join('')}</div></div>`;
+}
+function renderDerived(){
+  const v=validate(),{out}=cargaChecks();
+  const ST=stats(),all=ST.all,maxRI=ST.maxRI||{i:0,j:0,c:{RI:0}},maxRR=ST.maxRR||{i:0,j:0,c:{RR:0}},ma=ST.ma;
+  let html='';
+  if(ma.length)html+=`<div class="alert stop" role="alert"><strong>Detener la actividad y dar aviso al jefe directo y a Seguridad Industrial</strong>Riesgo residual Muy Alto en: ${ma.map(x=>`${x.i+1}.${x.j+1} (RR ${fmtN(x.c.RR)})`).join(', ')}. Operación no permitida.</div>`;
+  out.forEach(o=>{html+=`<div class="alert stop"><strong>Carga manual mayor al límite de la NOM-036-1-STPS-2018</strong>${o.i>=0?`Riesgo ${o.i+1}.${o.j+1}: `:'La descripción menciona '}${fmtN(o.w)} kg &gt; límite de ${o.L.kg} kg (${esc(o.L.txt)}). Clasificado como peligro 35. Implementa ayuda mecánica (control de ingeniería) antes que capacitación o EPP. ${VN}</div>`});
+  const errs=v.filter(x=>x.lvl==='err'),warns=v.filter(x=>x.lvl==='warn');
+  html+=errs.length||warns.length?`<div class="alert ${errs.length?'stop':'warn'}"><strong>Validación automática: ${errs.length} error(es), ${warns.length} aviso(s)</strong><ul>${v.map(x=>`<li>${esc(x.t)}</li>`).join('')}</ul></div>`:`<div class="alert ok"><strong>Validación automática correcta</strong>RI = F×P×S, RR = RI×C y C corresponde al control aplicado de mayor jerarquía en todos los riesgos; ningún riesgo queda sin control.</div>`;
+  const h=D.header;if(h.estado==='Aprobado'&&(errs.length||!h.aprobo.nombre||!h.reviso.nombre))html+=`<div class="alert warn"><strong>Estado "Aprobado" con pendientes</strong>${errs.length?'Hay errores de validación. ':''}${!h.reviso.nombre||!h.aprobo.nombre?'Captura quién revisó y quién aprobó en Paso 2 · Datos del AST.':''}</div>`;
+  $('#astAlerts').innerHTML=html;
+  const lines=[`<b>Actividad:</b> ${esc(D.titulo||D.header.posicion||'Sin título')}`,`<b>Pasos:</b> ${D.pasos.length} · <b>Riesgos:</b> ${all.length} · <b>Con medida adicional (RR ≥ ${esc(D.config.umbral)}):</b> ${all.filter(x=>x.c.req).length}`,all.length?`<b>Riesgo inicial más alto:</b> ${maxRI.i+1}.${maxRI.j+1} RI ${maxRI.c.RI} ${chip(maxRI.c.RI)} · <b>Riesgo residual más alto:</b> ${maxRR.i+1}.${maxRR.j+1} RR ${fmtN(maxRR.c.RR)} ${chip(maxRR.c.RR)}`:'',`<b>Alertas:</b> ${[ma.length?ma.length+' riesgo(s) residual(es) Muy Alto':'',out.length?'carga manual sobre el límite':'',errs.length?errs.length+' error(es) de validación':''].filter(Boolean).join(' · ')||'ninguna'}`,D.fuentes?`<b>Fuentes:</b> ${[D.fuentes.texto?'descripción escrita':'',D.fuentes.fotos?D.fuentes.fotos+' foto(s)':'',D.fuentes.video?'video de '+mmss(D.fuentes.video):''].filter(Boolean).join(', ')}`:''].filter(Boolean).slice(0,5);
+  const K=[['Pasos',D.pasos.length,'secuencia de la actividad'],['Riesgos identificados',all.length,`${ST.dist.ri.ma+ST.dist.ri.a} en Alto o Muy Alto inicial`],['Riesgo inicial máx.',maxRI.c.RI,cls(maxRI.c.RI).n],['Riesgo residual máx.',fmtN(maxRR.c.RR),cls(maxRR.c.RR).n],['Reducción del riesgo',ST.pct+'%','Σ RR frente a Σ RI'],['Requieren acción',ST.req,`RR ≥ ${D.config.umbral}`]];
+  const CL=[['ma','Muy Alto'],['a','Alto'],['m','Moderado'],['b','Bajo']],tot=Math.max(1,all.length);
+  const prof=CL.map(([k,n])=>`<div class="pr"><span class="k k-${k}">${n}</span><div class="bars"><div class="bar"><i class="ri" style="width:${ST.dist.ri[k]/tot*100}%;background:var(--${k})"></i>${ST.dist.ri[k]} inicial</div><div class="bar"><i style="width:${ST.dist.rr[k]/tot*100}%;background:var(--${k})"></i>${ST.dist.rr[k]} residual</div></div></div>`).join('');
+  $('#astResumen').innerHTML=`<div class="kpis">${K.map(([t,v,s2])=>`<div class="kpi"><span>${t}</span><b>${v}</b><small>${esc(s2)}</small></div>`).join('')}</div><div class="dash"><div class="panel" style="margin:0"><h2>Resumen ejecutivo</h2>${lines.map(l=>`<div style="margin:3px 0">${l}</div>`).join('')}</div><div class="panel" style="margin:0"><h2>Perfil de riesgo: inicial contra residual</h2><div class="prof">${prof}</div><div class="legend"><span><i style="opacity:.45"></i>Riesgo inicial (RI)</span><span><i></i>Riesgo residual (RR)</span></div></div></div>`;
+  const o=D.obs;
+  $('#astObs').innerHTML=o&&(o.observado.length||o.inferido.length||o.calidad)?`<details class="panel" open><summary><h2 style="display:inline">Análisis de imagen y video</h2></summary>${o.calidad?`<p><b>Calidad de la evidencia:</b> ${esc(o.calidad)}</p>`:''}<div class="two">${[['Observado en la imagen',o.observado],['Inferido',o.inferido],['Condiciones inseguras',o.cond],['Actos inseguros',o.actos]].map(([t,l])=>`<div><h3>${t}</h3>${l.length?`<ul class="clean">${l.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:'<p class="note">Ninguno.</p>'}</div>`).join('')}</div></details>`:'';
+  renderEpp();renderPlan();renderSup();
+  if(tab==='tabla')renderTabla();
+}
+const sel=(f,i,j,v)=>`<select data-f="${f}" data-i="${i}" data-j="${j}" aria-label="${f} riesgo ${i+1}.${j+1}">${[1,2,3,4,5].map(n=>`<option ${n==v?'selected':''}>${n}</option>`).join('')}</select>`;
+const tiposTxt=r=>r.tipos.map(t=>TIPO[t]?`${t} ${TIPO[t].t}`:`${t} (?)`).join('; ');
+function orgLegend(){return`<div class="orgleg" role="note"><b>Origen de los datos:</b><span>${orig('codigo')} calculado por la plataforma (RI, C, RR y clasificación)</span><span>${orig('ia')} propuesto por el modelo de IA</span><span>${orig('manual')} capturado o modificado por la persona</span><span>${orig()} AST guardado antes de registrar el origen</span></div>`}
+function renderTabla(){
+  // Una fila por riesgo; columnas agrupadas. Misma información que la tabla anterior de 16 columnas.
+  const H=[['Paso','No. y descripción (secuencia del proceso)'],['Peligro y riesgo','Mecanismo de lesión, región anatómica y tipo de peligro (No. del catálogo)'],['Evaluación inicial','F × P × S = RI y clasificación'],['Medidas de control','Por jerarquía y factor C'],['Residual','C aplicado (el más alto), RR, clasificación y ¿requiere control adicional?'],['Norma de referencia','']];
+  let rows='';
+  D.pasos.forEach((s,i)=>{
+    const n=Math.max(1,s.riesgos.length),band=i%2?' class="b2"':'';
+    const pasoTd=`<td class="stk1 pasoc" rowspan="${n}"><span class="pn">${i+1}</span><b>${s.d?esc(s.d):'<span class="nd">Sin descripción</span>'}</b>${orig(s.origen)}</td>`;
+    if(!s.riesgos.length){rows+=`<tr${band}>${pasoTd}<td colspan="5" class="nd">Sin riesgos identificados</td></tr>`;return}
+    s.riesgos.forEach((r,j)=>{
+      const c=calc(r),tt=tiposTxt(r),id=`${i+1}.${j+1}`;
+      const ctl=r.controles.length?`<ul class="ctls">${r.controles.map((ct,k)=>`<li><span class="jt j${ct.j}">${JER[ct.j]} ${FACT[ct.j].toFixed(2)}</span><span class="cn">${id}.${k+1}</span>${ct.t?esc(ct.t):'<span class="nd">Sin texto</span>'}${ct.ap?'':' <span class="tag prop">Propuesto</span>'} ${orig(ct.origen)}</li>`).join('')}</ul>`:'<span class="nd">Sin control</span>';
+      rows+=`<tr${band}>${j===0?pasoTd:''}
+        <td class="stk2"><span class="rid">${id}</span>${esc(r.peligro)} ${orig(r.origen)}<div class="sub">Tipo: ${tt?esc(tt):'sin tipo del catálogo'}${nv(tt)}</div>${r.evid?`<div class="sub">Evidencia: ${esc(r.evid)}</div>`:''}</td>
+        <td><div class="fps3"><label>F ${sel('F',i,j,r.F)}</label><label>P ${sel('P',i,j,r.P)}</label><label>S ${sel('S',i,j,r.S)}</label></div><div class="kv"><span>RI</span><b>${c.RI}</b>${chip(c.RI)}</div>${orig('codigo')}</td>
+        <td>${ctl}</td>
+        <td><div class="kv"><span>C</span><b>${c.j==null?'—':c.C.toFixed(2)}</b>${c.j==null?'<span class="note">sin control aplicado</span>':`<span class="note">${JER[c.j]}</span>`}</div><div class="kv"><span>RR</span><b>${fmtN(c.RR)}</b>${chip(c.RR)}</div><div class="kv"><span>¿Requiere control adicional?</span><b>${c.req?'Sí':'No'}</b></div>${orig('codigo')}</td>
+        <td>${r.norma?esc(r.norma)+'<br>'+VN:'<span class="nd">Sin norma</span>'}</td></tr>`;
+    });
+  });
+  $('#astTabla').innerHTML=`${orgLegend()}<div class="tablewrap astwrap" tabindex="0" role="region" aria-label="Tabla AST"><table class="ast"><colgroup>${H.map((x,n)=>`<col class="c${n+1}">`).join('')}</colgroup><thead><tr>${H.map(([t,s2],n)=>`<th scope="col"${n<2?` class="stk${n+1}"`:''}>${t}${s2?`<small>${s2}</small>`:''}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div><p class="note">F, P y S se pueden cambiar aquí; RI, C, RR y la clasificación se recalculan con código. Los controles marcados "Propuesto" no cuentan en C hasta confirmarlos en "Editar pasos y controles". Cambiar un dato propuesto por la IA lo marca como "✎ Editado".</p>`;
+}
+function renderEditor(){
+  $('#astEditor').innerHTML=D.pasos.map((s,i)=>`<div class="step"><header><span class="n">${i+1}</span><div><label for="sd${i}">Descripción del paso</label><textarea id="sd${i}" rows="2" data-f="d" data-i="${i}" style="min-height:60px">${esc(s.d)}</textarea></div><button class="sm x del" data-act="delStep" data-i="${i}">Quitar paso</button></header>
+  <div style="padding:8px 14px 0" class="row"><span class="note">Origen del paso:</span><span id="os${i}">${orig(s.origen)}</span></div>
+  ${s.riesgos.map((r,j)=>{const c=calc(r);return`<div class="risk"><div class="rh"><b>${i+1}.${j+1}</b><div><label for="rp${i}_${j}">Peligro / riesgo (mecanismo y región anatómica)</label><textarea id="rp${i}_${j}" rows="2" style="min-height:56px" data-f="peligro" data-i="${i}" data-j="${j}">${esc(r.peligro)}</textarea></div><button class="sm x del" data-act="delRisk" data-i="${i}" data-j="${j}">Quitar riesgo</button></div>
+  <div class="fps">${['F','P','S'].map(k=>`<div><label for="${k}${i}_${j}">${k} — ${{F:'Frecuencia',P:'Probabilidad',S:'Severidad'}[k]}</label><select id="${k}${i}_${j}" data-f="${k}" data-i="${i}" data-j="${j}">${[5,4,3,2,1].map(n=>`<option value="${n}" ${n==r[k]?'selected':''}>${n} · ${esc(({F:F_TXT,P:P_TXT,S:S_TXT})[k][n].split(':')[0])}</option>`).join('')}</select></div>`).join('')}<div><label for="tp${i}_${j}">Tipo(s) de peligro (No.)</label><input id="tp${i}_${j}" data-f="tipos" data-i="${i}" data-j="${j}" value="${esc(r.tipos.join(', '))}" placeholder="Ej. 26, 28" list="dlTipos"></div><div><label for="pk${i}_${j}">Peso de la pieza (kg, opcional)</label><input id="pk${i}_${j}" type="number" min="0" step="0.1" data-f="peso" data-i="${i}" data-j="${j}" value="${esc(r.peso)}"></div></div>
+  <div class="note">${esc(tiposTxt(r))}${nv(tiposTxt(r))}</div>
+  <div class="row" style="gap:6px;margin-top:4px"><span class="note">Origen del riesgo:</span><span id="or${i}_${j}">${orig(r.origen)}</span><span class="note">· RI, C y RR:</span>${orig('codigo')}</div>
+  <div class="score">RI = ${r.F}×${r.P}×${r.S} = <b>${c.RI}</b> ${chip(c.RI)} · C = <b>${c.j==null?'— (sin control aplicado)':c.C.toFixed(2)+' '+JER[c.j]}</b> · RR = <b>${fmtN(c.RR)}</b> ${chip(c.RR)} · Requiere medida adicional: <b>${c.req?'Sí':'No'}</b></div>
+  <div><b>Medidas de control</b> <span class="note">(se ordenan de mayor a menor jerarquía)</span></div>
+  ${r.controles.map((ct,k)=>`<div class="ctl"><span class="cn">${i+1}.${j+1}.${k+1}</span><input aria-label="Control ${i+1}.${j+1}.${k+1}" data-f="ct" data-i="${i}" data-j="${j}" data-k="${k}" value="${esc(ct.t)}" placeholder="Control en imperativo, verificable"><select aria-label="Jerarquía" data-f="cj" data-i="${i}" data-j="${j}" data-k="${k}">${[1,2,3,4,5].map(n=>`<option value="${n}" ${n==ct.j?'selected':''}>${JER[n]} (${FACT[n].toFixed(2)})</option>`).join('')}</select><label><input type="checkbox" data-f="cap" data-i="${i}" data-j="${j}" data-k="${k}" ${ct.ap?'checked':''}> Aplicado</label><button class="sm x del" data-act="delCtl" data-i="${i}" data-j="${j}" data-k="${k}" aria-label="Quitar control ${i+1}.${j+1}.${k+1}">×</button></div><div style="margin:-2px 0 6px 60px" id="oc${i}_${j}_${k}">${orig(ct.origen)}</div>`).join('')}
+  <button class="sm" data-act="addCtl" data-i="${i}" data-j="${j}">Agregar control</button>
+  <div class="grid" style="margin-top:12px"><div><label for="nm${i}_${j}">Norma de referencia</label><input id="nm${i}_${j}" data-f="norma" data-i="${i}" data-j="${j}" value="${esc(r.norma)}" aria-describedby="nmv${i}_${j}"><span class="vn" id="nmv${i}_${j}">${VN_TXT}</span></div><div><label for="ev${i}_${j}">Evidencia (foto o segundo del video)</label><input id="ev${i}_${j}" data-f="evid" data-i="${i}" data-j="${j}" value="${esc(r.evid)}"></div></div>
+  <details><summary>Justificación de F, P y S</summary><textarea data-f="just" data-i="${i}" data-j="${j}" rows="2" aria-label="Justificación">${esc(r.just)}</textarea></details></div>`}).join('')}
+  <div class="risk"><button class="sm" data-act="addRisk" data-i="${i}">Agregar riesgo al paso ${i+1}</button></div></div>`).join('')+`<button class="dark" data-act="addStep">Agregar paso</button><datalist id="dlTipos">${Object.entries(TIPO).map(([n,o])=>`<option value="${n}">${esc(o.g+' · '+o.t)}</option>`).join('')}</datalist>`;
+}
+function renderEpp(){$('#astEpp').innerHTML=`<div class="panel"><h2>EPP requerido para toda la actividad</h2><label for="eppTxt">Un elemento por línea</label><textarea id="eppTxt" data-list="epp" rows="${Math.max(3,D.epp.length+1)}">${esc(D.epp.join('\n'))}</textarea></div>`}
+function planRows(){const o=[];D.pasos.forEach((s,i)=>s.riesgos.forEach((r,j)=>{const c=calc(r);if(c.req)o.push({i,j,r,c})}));return o}
+function planAccion(r){const prop=r.controles.filter(c=>!c.ap&&c.t.trim()).map(c=>c.t);return r.accion||prop.join('; ')}
+function renderPlan(){
+  const rows=planRows();
+  $('#astPlan').innerHTML=`<div class="panel"><h2>Plan de acción (RR ≥ ${esc(D.config.umbral)})</h2>${rows.length?`<div class="scroll"><table class="simple" style="min-width:760px;table-layout:fixed"><colgroup><col style="width:30%"><col style="width:120px"><col style="width:32%"><col style="width:18%"><col style="width:13%"></colgroup><thead><tr><th>Riesgo</th><th>RR</th><th>Acción</th><th>Responsable sugerido</th><th>Plazo</th></tr></thead><tbody>${rows.map(x=>`<tr><td><b>${x.i+1}.${x.j+1}</b> ${esc(x.r.peligro)}</td><td class="num">${fmtN(x.c.RR)} ${chip(x.c.RR)}</td><td><textarea rows="2" style="min-height:60px" data-f="accion" data-i="${x.i}" data-j="${x.j}" aria-label="Acción ${x.i+1}.${x.j+1}">${esc(planAccion(x.r))}</textarea></td><td><input data-f="resp" data-i="${x.i}" data-j="${x.j}" value="${esc(x.r.resp)}" aria-label="Responsable ${x.i+1}.${x.j+1}"></td><td>${PLAZO[x.c.cRR.k]}</td></tr>`).join('')}</tbody></table></div>`:'<p class="note">Ningún riesgo residual alcanza el umbral.</p>'}</div>`;
+}
+function renderSup(){$('#astSup').innerHTML=`<div class="panel two"><div><h2>Supuestos</h2><label for="supTxt">Uno por línea</label><textarea id="supTxt" data-list="supuestos" rows="${Math.max(3,D.supuestos.length+1)}">${esc(D.supuestos.join('\n'))}</textarea></div><div><h2>Datos por verificar</h2><label for="verTxt">Uno por línea</label><textarea id="verTxt" data-list="verificar" rows="${Math.max(3,D.verificar.length+1)}">${esc(D.verificar.join('\n'))}</textarea></div></div>`}
+
+const astBody=$('#astBody');
+function fieldTarget(el){const i=+el.dataset.i,j=+el.dataset.j,k=+el.dataset.k;const s=D.pasos[i],r=s&&s.riesgos[j],c=r&&r.controles[k];return{s,r,c,i,j,k}}
+// Trazabilidad: cualquier cambio de la persona sobre un dato lo marca como 'manual' (✎ Editado).
+function setManual(obj,elId){if(!obj||obj.origen==='manual')return;markManual(obj);const el=elId&&document.getElementById(elId);if(el)el.innerHTML=orig('manual')}
+astBody.addEventListener('input',e=>{
+  const el=e.target,f=el.dataset.f;
+  if(el.dataset.list){D[el.dataset.list]=el.value.split('\n').map(x=>x.trim()).filter(Boolean);touch();return}
+  if(!f)return;const{s,r,c,i,j,k}=fieldTarget(el);
+  if(f==='d'){s.d=el.value;setManual(s,'os'+i)}
+  else if(['peligro','norma','evid','just','accion','resp'].includes(f)){r[f]=el.value;setManual(r,`or${i}_${j}`)}
+  else if(f==='ct'){c.t=el.value;setManual(c,`oc${i}_${j}_${k}`)}
+  else return;
+  touch();
+});
+astBody.addEventListener('change',e=>{
+  const el=e.target,f=el.dataset.f;if(!f)return;const{s,r,c}=fieldTarget(el);
+  if(['F','P','S'].includes(f)){const nv2=clampInt(el.value,r[f]);if(nv2!==r[f])markManual(r);r[f]=nv2;touch();renderDerived();if(tab==='editor')renderEditor();return}
+  if(f==='tipos'){r.tipos=[...new Set(el.value.split(/[^\d]+/).filter(Boolean).map(Number))];markManual(r);touch();renderEditor();renderDerived();return}
+  if(f==='peso'){r.peso=el.value===''?'':Number(el.value);markManual(r);cargaChecks();touch();renderEditor();renderDerived();return}
+  if(f==='cj'){c.j=clampInt(el.value,5);markManual(c);sortCtl(r);touch();renderEditor();renderDerived();return}
+  if(f==='cap'){c.ap=el.checked;markManual(c);touch();renderEditor();renderDerived();return}
+  if(['ct','peligro','d','norma'].includes(f)){renderDerived();if(f==='peligro'||f==='ct')renderPlan()}
+});
+astBody.addEventListener('click',e=>{
+  const b=e.target.closest('[data-act]');if(!b)return;const i=+b.dataset.i,j=+b.dataset.j,k=+b.dataset.k;const a=b.dataset.act;
+  if(a==='addStep')D.pasos.push(blankStep());
+  if(a==='delStep')D.pasos.splice(i,1);
+  if(a==='addRisk')D.pasos[i].riesgos.push(blankRisk());
+  if(a==='delRisk'){D.pasos[i].riesgos.splice(j,1);markManual(D.pasos[i])}
+  if(a==='delCtl')markManual(D.pasos[i].riesgos[j]);
+  if(a==='addCtl')D.pasos[i].riesgos[j].controles.push(blankCtl());
+  if(a==='delCtl')D.pasos[i].riesgos[j].controles.splice(k,1);
+  touch();
+  if(!D.pasos.length){renderAST();return}
+  renderEditor();renderDerived();
+});
+
+/* ---------- Exportar ---------- */
+const LIBS={xlsx:['https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js','https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js'],
+  pdf:['https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js','https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js'],
+  at:['https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js','https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js']};
+function loadScript(urls){return new Promise((res,rej)=>{let k=0;const tryN=()=>{if(k>=urls.length)return rej(new Error('lib'));const s=document.createElement('script');s.src=urls[k++];s.onload=res;s.onerror=()=>{s.remove();tryN()};document.head.appendChild(s)};tryN()})}
+async function needLibs(kind){if(kind==='xlsx'&&!window.ExcelJS)await loadScript(LIBS.xlsx);if(kind==='pdf'){if(!window.jspdf)await loadScript(LIBS.pdf);if(!(window.jspdf.jsPDF.API.autoTable))await loadScript(LIBS.at)}}
+function expMsg(html){$('#expMsg').innerHTML=html}
+function canExport(){
+  const miss=missingReq();
+  if(miss.length){expMsg(`<div class="alert stop" role="alert"><strong>No se puede exportar: faltan datos obligatorios</strong>${esc(miss.join(', '))}. <a href="#datos">Capturarlos en Paso 2 · Datos del AST</a></div>`);return false}
+  if(!D.pasos.length){expMsg('<div class="alert stop" role="alert"><strong>No hay contenido para exportar.</strong>Empieza en Paso 1 · Actividad.</div>');return false}
+  return true;
+}
+const fname=ext=>('AST '+(D.header.numero||'')+' '+(D.header.posicion||'')).replace(/[\\/:*?"<>|]+/g,' ').replace(/\s+/g,' ').trim().slice(0,90)+'.'+ext;
+async function saveFile(name,data){
+  if(!downloads){expMsg('<div class="alert stop" role="alert"><strong>La descarga no está disponible en esta vista.</strong>Abre la plataforma en claude.ai para descargar archivos.</div>');return}
+  try{await downloads.save({filename:name,data});toast('Archivo listo: '+name);rememberHeader()}catch(e){if(e&&e.code==='declined')return;expMsg(`<div class="alert stop" role="alert"><strong>No se pudo guardar el archivo</strong>${esc(e&&e.code==='rate_limited'?'Hay otra descarga pendiente; inténtalo en un momento.':'Inténtalo de nuevo.')}</div>`)}
+}
+function allRisks(){const o=[];D.pasos.forEach((s,i)=>s.riesgos.forEach((r,j)=>o.push({s,i,j,r,c:calc(r)})));return o}
+const FILL={ma:'FFC8231B',a:'FFF2B705',m:'FF1F5FBF',b:'FF2E7D3A'},FONTC={ma:'FFFFFFFF',a:'FF111111',m:'FFFFFFFF',b:'FFFFFFFF'};
+async function exportXlsx(){
+  expMsg('');if(!canExport())return;
+  const btn=$('#btnXlsx');btn.disabled=true;
+  try{
+    await needLibs('xlsx');
+    const h=D.header,L=limiteCarga(h.personal),U=Number(D.config.umbral)||24;
+    const wb=new ExcelJS.Workbook();wb.creator='Plataforma AST';wb.created=new Date();
+    const ws=wb.addWorksheet('AST',{pageSetup:{orientation:'landscape',paperSize:5,fitToPage:true,fitToWidth:1,fitToHeight:0,margins:{left:.3,right:.3,top:.4,bottom:.4,header:.2,footer:.2}},headerFooter:{oddFooter:'&LDocumento generado con apoyo de IA; validar antes de su uso&RPágina &P de &N'}});
+    const W=[6,26,32,16,5,5,5,7,12,52,15,11,8,12,12,28,30];const LC=17;// LC: última columna; 17 = Origen (agregada al final, sin mover las 16 existentes)
+    const xvn=t=>NORM_RE.test(String(t||''))?String(t)+'\n('+VN_TXT+')':String(t||'');ws.columns=W.map(w=>({width:w}));
+    const thin={style:'thin',color:{argb:'FF808080'}},B={top:thin,left:thin,bottom:thin,right:thin};
+    const put=(r,c,v,o={})=>{const cell=ws.getCell(r,c);cell.value=v;cell.alignment=Object.assign({vertical:'middle',wrapText:true},o.al||{});if(o.b)cell.font={bold:true,size:o.sz||10,color:o.color?{argb:o.color}:undefined};else cell.font={size:o.sz||10};if(o.fill)cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:o.fill}};if(o.border!==false)cell.border=B;return cell};
+    const mput=(r1,c1,r2,c2,v,o)=>{if(r1!==r2||c1!==c2)ws.mergeCells(r1,c1,r2,c2);for(let r=r1;r<=r2;r++)for(let c=c1;c<=c2;c++)ws.getCell(r,c).border=B;return put(r1,c1,v,o)};
+    if(h.logo){const id=wb.addImage({base64:h.logo.replace(/^data:image\/\w+;base64,/,''),extension:h.logo.startsWith('data:image/png')?'png':'jpeg'});ws.addImage(id,{tl:{col:0.1,row:0.15},ext:{width:150,height:68}})}
+    mput(1,1,5,2,'',{});
+    mput(1,3,1,12,'ANÁLISIS DE SEGURIDAD EN EL TRABAJO (AST)',{b:true,sz:16,al:{horizontal:'center'}});
+    mput(1,13,1,LC,`Código: ${h.codigo||'—'}\nEstado: ${h.estado||'Borrador'}${h.proxima?' · Próx. rev.: '+fmtDate(h.proxima):''}`,{b:true,sz:9,al:{horizontal:'center'}});
+    ws.getRow(1).height=36;
+    const lab=(r,c1,c2,t)=>mput(r,c1,r,c2,t,{b:true,fill:'FFEDEFF1'});
+    lab(2,3,3,'Empresa:');mput(2,4,2,8,h.empresa);lab(2,9,9,'Giro:');mput(2,10,2,11,giro());lab(2,12,13,'Planta:');mput(2,14,2,LC,h.planta);
+    lab(3,3,3,'Área de trabajo:');mput(3,4,3,8,h.area);lab(3,9,9,'Posición:');mput(3,10,3,11,h.posicion);lab(3,12,13,'No. de AST:');mput(3,14,3,LC,h.numero);
+    lab(4,3,3,'Supervisor del área:');mput(4,4,4,8,h.supervisor);lab(4,9,9,'Fecha:');mput(4,10,4,11,fmtDate(h.fecha));lab(4,12,13,'Revisión:');mput(4,14,4,LC,h.revision);
+    const p=h.personal,pers=[p.n?p.n+' trabajador(es)':'',{H:'Hombres',M:'Mujeres',X:'Mixto'}[p.genero]||'',{menor18:'Menores de 18',['18-45']:'18 a 45 años',mayor45:'Mayores de 45',mixto:'Edad mixta'}[p.edad]||''].filter(Boolean).join(', ');
+    lab(5,3,3,'Personal expuesto:');mput(5,4,5,8,pers||'Sin capturar');lab(5,9,9,'Límite de carga:');mput(5,10,5,LC,xvn(L.txt));
+    for(const r of [2,3,4,5])ws.getRow(r).height=26;
+    let R=7;
+    mput(R,1,R,LC,'Nombre de los integrantes del equipo evaluador y de la posición',{b:true,fill:'FFEDEFF1'});R++;
+    mput(R,1,R,5,'NOMBRE',{b:true,al:{horizontal:'center'}});mput(R,6,R,10,'PUESTO',{b:true,al:{horizontal:'center'}});mput(R,11,R,LC,'FIRMA',{b:true,al:{horizontal:'center'}});R++;
+    const eq=h.equipo.filter(m=>m.nombre||m.puesto);(eq.length?eq:[{nombre:'',puesto:''},{nombre:'',puesto:''}]).forEach(m=>{mput(R,1,R,5,m.nombre);mput(R,6,R,10,m.puesto);mput(R,11,R,LC,'');ws.getRow(R).height=26;R++});
+    R++;
+    mput(R,1,R,8,'SECUENCIA DE LA REALIZACIÓN DE LAS ACTIVIDADES DEL TRABAJO CON LOS DETALLES DE SEGURIDAD PARA CONTROLAR TODOS LOS RIESGOS',{b:true,fill:'FFFFC20E'});
+    mput(R,9,R,LC,'Riesgo inicial RI = F × P × S. Riesgo residual RR = RI × C, con C del control aplicado de mayor jerarquía.',{b:true,fill:'FFFFC20E'});ws.getRow(R).height=30;R++;
+    const HD=['No.','Descripción\n(conforme a secuencia de proceso)','Peligros y Riesgos\n(mecanismo de lesión y región anatómica)','Tipo de peligro\n(No. del catálogo)','F','P','S','RI','Clasificación RI','Medidas de control','Jerarquía del control','Valor de control aplicado C\n(el más alto)','RR','Clasificación RR','¿Requiere medida de control adicional?','Norma de referencia','Origen'];
+    HD.forEach((t,c)=>put(R,c+1,t,{b:true,color:'FFFFFFFF',fill:'FF1D2226',al:{horizontal:'center'}}));ws.getRow(R).height=48;const headRow=R;R++;
+    ws.views=[{state:'frozen',ySplit:headRow}];ws.pageSetup.printTitlesRow=headRow+':'+headRow;
+    D.pasos.forEach((s,i)=>{
+      const r0=R;
+      s.riesgos.forEach((r,j)=>{
+        const c=calc(r),cs=r.controles.length?r.controles:[{t:'Sin control',j:0,ap:false}],rr0=R,rr1=R+cs.length-1;
+        cs.forEach((ct,k)=>{put(R,10,ct.t?`${i+1}.${j+1}.${k+1} ${ct.t}${ct.ap?'':' (propuesto)'}`:'');put(R,11,ct.j?`${JER[ct.j]} (${FACT[ct.j].toFixed(2)})`:'');
+          put(R,LC,[j===0&&k===0?'Paso: '+ORT(s.origen):'',k===0?'Peligro, F, P y S: '+ORT(r.origen):'',ct.j?'Control: '+ORT(ct.origen):'','RI, C, RR y clasificación: Código'].filter(Boolean).join('\n'),{sz:9,al:{vertical:'top'}});R++});
+        mput(rr0,3,rr1,3,`${i+1}.${j+1} ${r.peligro}${r.evid?'\nEvidencia: '+r.evid:''}`,{al:{vertical:'top'}});
+        mput(rr0,4,rr1,4,xvn(tiposTxt(r)),{al:{vertical:'top'}});
+        mput(rr0,5,rr1,5,r.F,{al:{horizontal:'center'}});mput(rr0,6,rr1,6,r.P,{al:{horizontal:'center'}});mput(rr0,7,rr1,7,r.S,{al:{horizontal:'center'}});
+        mput(rr0,8,rr1,8,{formula:`E${rr0}*F${rr0}*G${rr0}`,result:c.RI},{b:true,al:{horizontal:'center'}});
+        const fc=a=>`IF(${a}>=64,"Muy Alto",IF(${a}>=40,"Alto",IF(${a}>=24,"Moderado","Bajo")))`;
+        mput(rr0,9,rr1,9,{formula:fc('H'+rr0),result:c.cRI.n},{b:true,fill:FILL[c.cRI.k],color:FONTC[c.cRI.k],al:{horizontal:'center'}});
+        mput(rr0,12,rr1,12,c.C,{al:{horizontal:'center'}});ws.getCell(rr0,12).numFmt='0.00';
+        mput(rr0,13,rr1,13,{formula:`H${rr0}*L${rr0}`,result:c.RR},{b:true,al:{horizontal:'center'}});ws.getCell(rr0,13).numFmt='0.##';
+        mput(rr0,14,rr1,14,{formula:fc('M'+rr0),result:c.cRR.n},{b:true,fill:FILL[c.cRR.k],color:FONTC[c.cRR.k],al:{horizontal:'center'}});
+        mput(rr0,15,rr1,15,{formula:`IF(M${rr0}>=${U},"Sí","No")`,result:c.req?'Sí':'No'},{b:true,al:{horizontal:'center'}});
+        mput(rr0,16,rr1,16,xvn(r.norma),{al:{vertical:'top'}});
+      });
+      if(!s.riesgos.length){mput(R,3,R,16,'Sin riesgos identificados');put(R,LC,'Paso: '+ORT(s.origen),{sz:9});R++}
+      mput(r0,1,R-1,1,i+1,{b:true,al:{horizontal:'center'}});mput(r0,2,R-1,2,s.d,{al:{vertical:'top'}});
+    });
+    mput(R,1,R,LC,ORG_LEG_TXT,{sz:9,al:{vertical:'top'}});ws.getRow(R).height=28;R++;
+    R++;
+    mput(R,1,R,LC,'EPP REQUERIDO PARA TODA LA ACTIVIDAD',{b:true,fill:'FFEDEFF1'});R++;
+    mput(R,1,R,LC,D.epp.map(x=>'• '+x).join('\n')||'—',{al:{vertical:'top'}});ws.getRow(R).height=Math.max(20,15*D.epp.length);R+=2;
+    mput(R,1,R,LC,`PLAN DE ACCIÓN (riesgos con RR ≥ ${U})`,{b:true,fill:'FFEDEFF1'});R++;
+    put(R,1,'Riesgo',{b:true});mput(R,2,R,3,'Peligro',{b:true});put(R,4,'RR',{b:true});mput(R,5,R,10,'Acción',{b:true});mput(R,11,R,13,'Responsable sugerido',{b:true});mput(R,14,R,LC,'Plazo',{b:true});R++;
+    const pr=planRows();if(!pr.length){mput(R,1,R,LC,'Ningún riesgo residual alcanza el umbral.');R++}
+    pr.forEach(x=>{put(R,1,`${x.i+1}.${x.j+1}`);mput(R,2,R,3,x.r.peligro);put(R,4,x.c.RR,{fill:FILL[x.c.cRR.k],color:FONTC[x.c.cRR.k],b:true});mput(R,5,R,10,planAccion(x.r)||'Por definir');mput(R,11,R,13,x.r.resp);mput(R,14,R,LC,`${PLAZO[x.c.cRR.k]} (${x.c.cRR.n})`);ws.getRow(R).height=32;R++});
+    R++;
+    mput(R,1,R,8,'SUPUESTOS',{b:true,fill:'FFEDEFF1'});mput(R,9,R,LC,'DATOS POR VERIFICAR',{b:true,fill:'FFEDEFF1'});R++;
+    mput(R,1,R,8,D.supuestos.map(x=>'• '+x).join('\n')||'—',{al:{vertical:'top'}});mput(R,9,R,LC,D.verificar.map(x=>'• '+x).join('\n')||'—',{al:{vertical:'top'}});ws.getRow(R).height=Math.max(24,15*Math.max(D.supuestos.length,D.verificar.length));R+=2;
+    const elab=h.equipo.filter(m=>m.nombre).map(m=>m.nombre).join(', ');
+    const sig=[[1,4,'Elaboró (equipo evaluador)',elab],[5,8,'Supervisor del área',h.supervisor],[9,12,'Revisó',[h.reviso.nombre,h.reviso.puesto].filter(Boolean).join(', ')],[13,LC,'Aprobó',[h.aprobo.nombre,h.aprobo.puesto].filter(Boolean).join(', ')]];
+    sig.forEach(([a,b,t])=>mput(R,a,R,b,t,{b:true,fill:'FFEDEFF1',al:{horizontal:'center'}}));R++;
+    sig.forEach(([a,b])=>mput(R,a,R,b,''));ws.getRow(R).height=46;R++;
+    sig.forEach(([a,b,,n])=>mput(R,a,R,b,n?n+' · firma':'Nombre y firma',{al:{horizontal:'center'}}));R+=2;
+    mput(R,1,R,LC,'Documento generado con apoyo de IA; validar antes de su uso. Debe ser validado y firmado por el supervisor del área y por Seguridad Industrial.',{al:{horizontal:'left'},border:false});
+    const ST=stats(),rs=wb.addWorksheet('Resumen',{pageSetup:{orientation:'portrait',fitToPage:true,fitToWidth:1,fitToHeight:0}});rs.columns=[{width:34},{width:16},{width:16},{width:40}];
+    const rrow=(vals,o={})=>{const r=rs.addRow(vals);r.eachCell(c=>{c.border=B;c.alignment={vertical:'middle',wrapText:true};if(o.b)c.font={bold:true,color:o.fc?{argb:o.fc}:undefined};if(o.fill)c.fill={type:'pattern',pattern:'solid',fgColor:{argb:o.fill}}});return r};
+    rs.addRow(['RESUMEN EJECUTIVO DEL AST']).font={bold:true,size:14};rs.addRow([`${h.empresa} · ${h.area} · ${h.posicion}`]);rs.addRow([]);
+    rrow(['Indicador','Valor','','Detalle'],{b:true,fc:'FFFFFFFF',fill:'FF0F2A44'});
+    rrow(['Pasos de la actividad',D.pasos.length,'','']);rrow(['Riesgos identificados',ST.all.length,'','']);
+    if(ST.maxRI)rrow(['Riesgo inicial más alto',ST.maxRI.c.RI,ST.maxRI.c.cRI.n,`${ST.maxRI.i+1}.${ST.maxRI.j+1} ${ST.maxRI.r.peligro}`]);
+    if(ST.maxRR)rrow(['Riesgo residual más alto',ST.maxRR.c.RR,ST.maxRR.c.cRR.n,`${ST.maxRR.i+1}.${ST.maxRR.j+1} ${ST.maxRR.r.peligro}`]);
+    rrow(['Reducción del riesgo (1 − ΣRR/ΣRI)',ST.pct/100,'','']).getCell(2).numFmt='0%';
+    rrow([`Riesgos que requieren medida adicional (RR ≥ ${U})`,ST.req,'','']);
+    rrow(['Alertas',ST.ma.length?ST.ma.length+' residual(es) Muy Alto':'Sin riesgo residual Muy Alto','',cargaChecks().out.length?'Carga manual mayor al límite de la NOM-036-1 ('+VN_TXT+')':'']);
+    rs.addRow([]);rrow(['Clasificación','Riesgo inicial (RI)','Riesgo residual (RR)',''],{b:true,fc:'FFFFFFFF',fill:'FF0F2A44'});
+    [['ma','Muy Alto'],['a','Alto'],['m','Moderado'],['b','Bajo']].forEach(([k,n])=>{const r=rrow([n,ST.dist.ri[k],ST.dist.rr[k],'']);r.getCell(1).fill={type:'pattern',pattern:'solid',fgColor:{argb:FILL[k]}};r.getCell(1).font={bold:true,color:{argb:FONTC[k]}}});
+    if(h.cambios.length){const cc=wb.addWorksheet('Control de cambios');cc.columns=[{width:14},{width:12},{width:90}];const hr=cc.addRow(['Fecha','Revisión','Descripción del cambio']);hr.eachCell(c=>{c.font={bold:true,color:{argb:'FFFFFFFF'}};c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF0F2A44'}};c.border=B});h.cambios.forEach(c=>{const r=cc.addRow([fmtDate(c.fecha),c.rev,c.desc]);r.eachCell(x=>{x.border=B;x.alignment={wrapText:true,vertical:'top'}})})}
+    const m=wb.addWorksheet('Metodología');m.columns=[{width:16},{width:110}];
+    const mrow=(a,b,bold)=>{const r=m.addRow([a,b]);r.eachCell(c=>{c.alignment={wrapText:true,vertical:'top'};c.border=B;if(bold)c.font={bold:true}})};
+    mrow('Concepto','Criterio',true);
+    [5,4,3,2,1].forEach(n=>mrow('F = '+n,F_TXT[n]));[5,4,3,2,1].forEach(n=>mrow('P = '+n,P_TXT[n]));[5,4,3,2,1].forEach(n=>mrow('S = '+n,S_TXT[n]));
+    [1,2,3,4,5].forEach(n=>mrow('C = '+FACT[n].toFixed(2),JER[n]));
+    mrow('Clasificación','64-125 Muy Alto: operación no permitida · 40-63 Alto: acción inmediata · 24-39 Moderado: acción en menos de 1 semana · 1-23 Bajo: acción no inmediata');
+    mrow('Umbral','¿Requiere medida de control adicional? = Sí cuando RR ≥ '+U);
+    mrow('Carga manual','NOM-036-1-STPS-2018, 8.3 b) 2), Tabla 1: H 18-45: 25 kg · M 18-45: 20 kg · H >45: 20 kg · M >45: 15 kg · menores de 18: 7 kg · gestación y 10 semanas posparto: 10 kg con aval médico. No aplica a cargas < 3 kg. '+VN_TXT+'.');
+    Object.entries(TIPO).forEach(([n,o])=>mrow('Tipo '+n,xvn(o.g+' · '+o.t)));
+    mrow('Origen',ORG_LEG_TXT);
+    const buf=await wb.xlsx.writeBuffer();
+    await saveFile(fname('xlsx'),new Blob([buf]));
+  }catch(e){console.error(e);expMsg('<div class="alert stop" role="alert"><strong>No se pudo generar el Excel</strong>No cargó la biblioteca de exportación o hubo un error. Inténtalo de nuevo.</div>')}
+  finally{btn.disabled=false}
+}
+const pdfT=s=>String(s??'').replace(/[≥]/g,'>=').replace(/[≤]/g,'<=').replace(/[–—]/g,'-').replace(/[“”]/g,'"').replace(/[‘’]/g,"'").replace(/…/g,'...').replace(/²/g,'2').replace(/³/g,'3').replace(/•/g,'-').replace(/[^\x09\x0A\x0D\x20-\x7E\xA0-\xFF]/g,'');
+async function exportPdf(){
+  expMsg('');if(!canExport())return;
+  const btn=$('#btnPdf');btn.disabled=true;
+  try{
+    await needLibs('pdf');
+    // Carta horizontal (792 × 612 pt). Encabezado documental y cabecera de tabla en cada página; filas completas por página.
+    const {jsPDF}=window.jspdf,doc=new jsPDF({orientation:'landscape',unit:'pt',format:'letter'});
+    const h=D.header,L=limiteCarga(h.personal),U=Number(D.config.umbral)||24,PW=doc.internal.pageSize.getWidth(),PH=doc.internal.pageSize.getHeight(),M=24,TW=PW-2*M;
+    const INK=[15,27,42],GRID=[170,179,190],SOFT=[243,245,248],NAVY=[15,42,68],MUTE=[95,106,120];
+    const RGB={ma:[198,40,40],a:[242,183,5],m:[31,95,191],b:[46,125,50]},TXT={ma:255,a:17,m:255,b:255};
+    const est=estadoOf(h.estado),SEALC={'Borrador':[91,104,120],'En revisión':[31,95,191],'Aprobado':[46,125,50]};
+    const pvn=t=>NORM_RE.test(String(t||''))?'\n('+VN_TXT+')':'';
+    const OP=o=>OR[o]?OR[o][1]:'No registrado';
+    const logoFmt=h.logo&&h.logo.startsWith('data:image/png')?'PNG':'JPEG';
+    let logoWH=null;if(h.logo){const im=await new Promise(res=>{const i=new Image();i.onload=()=>res(i);i.onerror=()=>res(null);i.src=h.logo});if(im){const s=Math.min(100/im.width,52/im.height);logoWH=[im.width*s,im.height*s]}}
+    const borr=est!=='Aprobado',HT=M,HH=72,LW=120,CW2=210,RX=PW-M-CW2,NR=6,RH=HH/NR,IY=HT+HH+4,IH=15,TOP=IY+2*IH+10,BOT=40,VX=RX+98;
+    const cells=[['Posición / máquina',h.posicion],['Supervisor del área',h.supervisor],['No. de AST',h.numero],['Área de trabajo',h.area],['Giro',giro()],['Personal expuesto',persTxt(h.personal)],['Límite de carga',L.kg+' kg'+(L.sup?' (supuesto)':'')],['Umbral de acción','RR >= '+U]];
+    const CTRL=[['Código',h.codigo||'-'],['Revisión',h.revision||'-'],['Estado',null],['Próxima revisión',fmtDate(h.proxima)||'-'],['Fecha de elaboración',fmtDate(h.fecha)||'-'],['Página','']];
+    const drawn=new Set();
+    const head=()=>{
+      const pg=doc.internal.getCurrentPageInfo().pageNumber;if(drawn.has(pg))return;drawn.add(pg);
+      doc.setDrawColor(...GRID);doc.setLineWidth(.6);doc.setTextColor(...INK);
+      doc.rect(M,HT,TW,HH);doc.line(M+LW,HT,M+LW,HT+HH);doc.line(RX,HT,RX,HT+HH);
+      if(logoWH)doc.addImage(h.logo,logoFmt,M+(LW-logoWH[0])/2,HT+(HH-logoWH[1])/2,logoWH[0],logoWH[1]);
+      else{doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(...MUTE);doc.text('Sin logotipo',M+LW/2,HT+HH/2+2,{align:'center'})}
+      const cx=M+LW+(RX-M-LW)/2;
+      doc.setFillColor(...NAVY);doc.rect(M+LW,HT,RX-M-LW,4,'F');
+      doc.setFont('helvetica','bold');doc.setFontSize(13);doc.setTextColor(...INK);doc.text('ANÁLISIS DE SEGURIDAD EN EL TRABAJO (AST)',cx,HT+28,{align:'center'});
+      doc.setFont('helvetica','normal');doc.setFontSize(9.5);doc.text(pdfT(h.empresa),cx,HT+44,{align:'center'});
+      doc.setFontSize(7.5);doc.setTextColor(...MUTE);doc.text(pdfT([h.planta,h.area].filter(Boolean).join('  ·  ')),cx,HT+57,{align:'center'});
+      CTRL.forEach(([k,v],n)=>{const y=HT+n*RH;if(n)doc.line(RX,y,PW-M,y);doc.setFont('helvetica','bold');doc.setFontSize(7);doc.setTextColor(...MUTE);doc.text(pdfT(k),RX+6,y+RH/2+2.5);
+        if(v===null){const t=pdfT(est.toUpperCase());doc.setFontSize(7.2);const w=doc.getTextWidth(t)+12;doc.setFillColor(...SEALC[est]);doc.roundedRect(VX-3,y+1.6,w,RH-3.2,1.5,1.5,'F');doc.setTextColor(255,255,255);doc.text(t,VX+3,y+RH/2+2.5)}
+        else{doc.setFont('helvetica','normal');doc.setTextColor(...INK);doc.text(pdfT(v),VX,y+RH/2+2.5)}});
+      const cw=TW/4;
+      cells.forEach(([k,v],n)=>{const x=M+(n%4)*cw,y=IY+Math.floor(n/4)*IH;doc.setFillColor(...SOFT);doc.setDrawColor(...GRID);doc.rect(x,y,cw,IH,'FD');doc.setFont('helvetica','bold');doc.setFontSize(7);doc.setTextColor(...MUTE);const kt=pdfT(k+': ');doc.text(kt,x+5,y+10);const kw=doc.getTextWidth(kt);doc.setFont('helvetica','normal');doc.setTextColor(...INK);let vt=pdfT(v||'-'),fs=7;const room=cw-kw-10;while(fs>5.6&&doc.getTextWidth(vt)>room){fs-=.2;doc.setFontSize(fs)}if(doc.getTextWidth(vt)>room){while(vt.length>1&&doc.getTextWidth(vt+'...')>room)vt=vt.slice(0,-1);vt+='...'}doc.text(vt,x+5+kw,y+10)});
+    };
+    const base={margin:{top:TOP,left:M,right:M,bottom:BOT},theme:'grid',rowPageBreak:'avoid',showHead:'everyPage',willDrawPage:head,didDrawPage:head,styles:{font:'helvetica',fontSize:7.2,cellPadding:3,overflow:'linebreak',lineColor:GRID,lineWidth:.4,textColor:INK},headStyles:{fillColor:NAVY,textColor:255,fontStyle:'bold'}};
+    const ST=stats(),co=cargaChecks().out;
+    const alertas=[ST.ma.length?ST.ma.length+' riesgo(s) residual(es) Muy Alto: detener la actividad':'',co.length?'Carga manual mayor al límite NOM-036-1 ('+VN_TXT+')':''].filter(Boolean).join('; ')||'Ninguna';
+    const kc=k=>({fillColor:RGB[k],textColor:TXT[k],fontStyle:'bold'});
+    doc.autoTable({...base,startY:TOP,head:[['Actividad analizada','Pasos','Riesgos','Riesgo inicial máx.','Riesgo residual máx.','Reducción del riesgo',`Requieren acción (RR >= ${U})`,'Alertas']],
+      body:[[pdfT(D.titulo||h.posicion),String(D.pasos.length),String(ST.all.length),ST.maxRI?{content:`${ST.maxRI.c.RI} · ${ST.maxRI.c.cRI.n}`,styles:kc(ST.maxRI.c.cRI.k)}:'-',ST.maxRR?{content:`${fmtN(ST.maxRR.c.RR)} · ${ST.maxRR.c.cRR.n}`,styles:kc(ST.maxRR.c.cRR.k)}:'-',ST.pct+'%',String(ST.req),pdfT(alertas)]],
+      columnStyles:{0:{cellWidth:170},1:{cellWidth:36,halign:'center'},2:{cellWidth:40,halign:'center'},3:{cellWidth:80,halign:'center'},4:{cellWidth:84,halign:'center'},5:{cellWidth:62,halign:'center'},6:{cellWidth:74,halign:'center'}},styles:{...base.styles,fontSize:7.6}});
+    // Leyenda de origen
+    let y=doc.lastAutoTable.finalY+9;
+    doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(...MUTE);
+    const lg=doc.splitTextToSize(pdfT(ORG_LEG_TXT),TW);doc.text(lg,M,y+5);y+=lg.length*8.4+5;
+    // Tabla AST: una fila por riesgo (filas atómicas, sin rowSpan) para que ninguna se corte entre páginas.
+    const body=[];
+    D.pasos.forEach((s,i)=>{
+      const pc=j=>({content:j===0?pdfT(`${i+1}. ${s.d||'(sin descripción)'}`)+`\n[${OP(s.origen)}]`:`${i+1} (cont.)`,styles:{fontStyle:j===0?'bold':'normal',fillColor:SOFT,textColor:j===0?INK:MUTE}});
+      if(!s.riesgos.length){body.push([pc(0),{content:'Sin riesgos identificados',colSpan:12,styles:{textColor:MUTE}}]);return}
+      s.riesgos.forEach((r,j)=>{const c=calc(r),tt=tiposTxt(r);
+        const ctl=r.controles.length?r.controles.map((ct,k)=>`${i+1}.${j+1}.${k+1} ${JER[ct.j]} (${FACT[ct.j].toFixed(2)}): ${ct.t}${ct.ap?'':' (propuesto)'} [${OP(ct.origen)}]`).join('\n'):'Sin control';
+        body.push([pc(j),
+          pdfT(`${i+1}.${j+1} ${r.peligro}\nTipo: ${tt||'-'}${r.evid?'\nEvidencia: '+r.evid:''}`)+pvn(tt),
+          ...[r.F,r.P,r.S].map(v=>({content:String(v),styles:{halign:'center'}})),
+          {content:String(c.RI),styles:{halign:'center',fontStyle:'bold'}},{content:c.cRI.n,styles:{halign:'center',...kc(c.cRI.k)}},
+          pdfT(ctl),
+          {content:c.j==null?'-':c.C.toFixed(2),styles:{halign:'center'}},{content:fmtN(c.RR),styles:{halign:'center',fontStyle:'bold'}},{content:c.cRR.n,styles:{halign:'center',...kc(c.cRR.k)}},{content:c.req?'Sí':'No',styles:{halign:'center',fontStyle:'bold'}},
+          r.norma?pdfT(r.norma)+'\n('+VN_TXT+')':'-',
+          `Peligro, F, P, S: ${OP(r.origen)}\nRI, C, RR: Código`]);
+      });
+    });
+    const HD=['Paso','Peligro y riesgo (mecanismo y región anatómica) · tipo de peligro','F','P','S','RI','Clasif. RI','Medidas de control (jerarquía, factor C) [origen]','C','RR','Clasif. RR','¿Control adicional?','Norma de referencia','Origen'];
+    const CW=[64,124,16,16,16,22,38,204,24,24,38,40,76,42];
+    doc.autoTable({...base,head:[HD.map(pdfT)],body,startY:y,
+      styles:{...base.styles,fontSize:6.8,cellPadding:2.4,valign:'top'},headStyles:{...base.headStyles,fontSize:6.4,valign:'bottom'},
+      columnStyles:Object.fromEntries(CW.map((w,n)=>[n,{cellWidth:w}]))});
+    y=doc.lastAutoTable.finalY+12;
+    const sec=(rows,cols,widths,extra={})=>{doc.autoTable({...base,head:[cols],body:rows,startY:y,headStyles:{fillColor:[228,233,239],textColor:INK,fontStyle:'bold'},columnStyles:widths?Object.fromEntries(widths.map((w,n)=>[n,{cellWidth:w}])):{},...extra});y=doc.lastAutoTable.finalY+12};
+    sec([[pdfT(D.epp.map(x=>'- '+x).join('\n')||'-')]],['EPP requerido para toda la actividad']);
+    const pr=planRows();
+    sec(pr.length?pr.map(x=>[`${x.i+1}.${x.j+1}`,pdfT(x.r.peligro),{content:fmtN(x.c.RR)+' · '+x.c.cRR.n,styles:kc(x.c.cRR.k)},pdfT(planAccion(x.r)||'Por definir'),pdfT(x.r.resp),PLAZO[x.c.cRR.k]]):[[{content:'Ningún riesgo residual alcanza el umbral.',colSpan:6}]],['Riesgo','Peligro','RR',`Plan de acción (RR >= ${U})`,'Responsable sugerido','Plazo'],[34,170,66,264,100,110]);
+    sec([[pdfT(D.supuestos.map(x=>'- '+x).join('\n')||'-'),pdfT(D.verificar.map(x=>'- '+x).join('\n')||'-')]],['Supuestos','Datos por verificar'],[TW/2,TW/2]);
+    if(h.cambios.length)sec(h.cambios.map(c=>[fmtDate(c.fecha),pdfT(c.rev),pdfT(c.desc)]),['Fecha','Revisión','Control de cambios: descripción'],[90,70,TW-160]);
+    // Bloque de firmas: Elaboró / Revisó / Aprobó, con líneas en blanco donde falten datos. Nunca se divide entre páginas.
+    const BL='______________________________',eqs=h.equipo.filter(m=>m.nombre||m.puesto);
+    const elN=eqs.map(m=>m.nombre).filter(Boolean).join('\n'),elP=eqs.map(m=>m.puesto).filter(Boolean).join('\n'),SW=(TW-70)/3;
+    const sig=[['Nombre',elN||BL,h.reviso.nombre||BL,h.aprobo.nombre||BL],['Puesto',elP||BL,h.reviso.puesto||BL,h.aprobo.puesto||BL],['Firma','','',''],['Fecha',fmtDate(h.fecha)||BL,BL,BL]];
+    doc.autoTable({...base,startY:y,pageBreak:'avoid',head:[['','Elaboró','Revisó','Aprobó']],body:sig.map(r=>r.map(pdfT)),
+      styles:{...base.styles,fontSize:8,valign:'middle',minCellHeight:20,cellPadding:4},headStyles:{...base.headStyles,halign:'center'},
+      columnStyles:{0:{cellWidth:70,fontStyle:'bold',fillColor:SOFT},1:{cellWidth:SW,halign:'center'},2:{cellWidth:SW,halign:'center'},3:{cellWidth:SW,halign:'center'}},
+      didParseCell:d=>{if(d.section==='body'&&d.row.index===2)d.cell.styles.minCellHeight=44}});
+    const np=doc.internal.getNumberOfPages();
+    for(let k=1;k<=np;k++){doc.setPage(k);
+      if(borr){doc.saveGraphicsState();doc.setGState(new doc.GState({opacity:.07}));doc.setFont('helvetica','bold');doc.setTextColor(198,40,40);const a=18*Math.PI/180,cx=PW/2,cy=PH/2+40;
+        doc.setFontSize(92);const w1=doc.getTextWidth('BORRADOR');doc.text('BORRADOR',cx-w1/2*Math.cos(a),cy+w1/2*Math.sin(a),{angle:18});
+        doc.setFontSize(30);const t2=pdfT('NO VÁLIDO PARA USO'),w2=doc.getTextWidth(t2),d2=44,cx2=cx+d2*Math.sin(a),cy2=cy+d2*Math.cos(a);doc.text(t2,cx2-w2/2*Math.cos(a),cy2+w2/2*Math.sin(a),{angle:18});
+        doc.restoreGraphicsState()}
+      doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(...INK);doc.text(`${k} de ${np}`,VX,HT+5*RH+RH/2+2.5);
+      doc.setDrawColor(...GRID);doc.line(M,PH-31,PW-M,PH-31);doc.setFontSize(7);doc.setTextColor(...MUTE);
+      doc.text(pdfT(`${h.codigo?h.codigo+' · ':''}AST ${h.numero||'s/n'} · Rev. ${h.revision||'-'} · ${h.posicion} · Estado: ${est}`),M,PH-21);
+      doc.text(`Página ${k} de ${np}`,PW-M,PH-21,{align:'right'});
+      doc.setFont('helvetica','italic');doc.text(pdfT('Documento generado con apoyo de IA; validar antes de su uso.'),M,PH-11)}
+    await saveFile(fname('pdf'),doc.output('blob'));
+  }catch(e){console.error(e);expMsg('<div class="alert stop" role="alert"><strong>No se pudo generar el PDF</strong>No cargó la biblioteca de exportación o hubo un error. Inténtalo de nuevo.</div>')}
+  finally{btn.disabled=false}
+}
+$('#btnXlsx').onclick=exportXlsx;$('#btnPdf').onclick=exportPdf;
+
+/* ---------- Historial ---------- */
+function summaryOf(d){const rs=[];d.pasos.forEach(s=>s.riesgos.forEach(r=>rs.push(r)));const save=D;D=d;const mx=rs.reduce((m,r)=>Math.max(m,calc(r).RR),0);D=save;return{empresa:d.header.empresa||'',area:d.header.area||'',posicion:d.header.posicion||'',numero:d.header.numero||'',fecha:d.header.fecha||'',titulo:d.titulo||'',maxRR:mx,actualizado:d.actualizado}}
+let histCache=null;
+async function histList(){
+  if(dbCol){try{const snap=await Promise.race([dbCol.orderBy('actualizado','desc').limit(300).get(),new Promise((_,rej)=>setTimeout(()=>rej(new Error('t')),10000))]);return snap.docs.map(d=>Object.assign({id:d.id},d.data()))}catch(e){toast('No se pudo leer el historial guardado en la nube; se muestra el local.')}}
+  const l=LS.get('ast.historial');return Array.isArray(l)?l.filter(x=>x&&typeof x==='object'&&x.id):[];
+}
+async function histSave(){
+  D.actualizado=Date.now();const doc={doc:JSON.parse(JSON.stringify(D)),...summaryOf(D)};
+  if(dbCol){try{await dbCol.doc(D.id).set(doc);rememberHeader();toast('AST guardado en el historial.');histCache=null;return}catch(e){toast(e&&e.code==='invalid_argument'?'El AST es demasiado grande para la nube (revisa el tamaño del logotipo). Se guardó en este navegador.':'No se pudo guardar en la nube; se guardó en este navegador.')}}
+  const L=(LS.get('ast.historial')||[]).filter(x=>x.id!==D.id);L.unshift(Object.assign({id:D.id},doc));
+  if(LS.set('ast.historial',L.slice(0,100))){rememberHeader();toast('AST guardado en este navegador.')}else toast('No se pudo guardar: el almacenamiento del navegador no está disponible.');
+  histCache=null;
+}
+async function histDelete(id){if(dbCol){try{await dbCol.doc(id).delete()}catch(e){}}LS.set('ast.historial',(LS.get('ast.historial')||[]).filter(x=>x.id!==id));histCache=null}
+async function renderHist(){
+  $('#histWhere').textContent=dbCol?'Tus AST guardados en tu cuenta (privados para ti).':'Los AST se guardan en este navegador. Abre la plataforma en claude.ai con sesión iniciada para guardarlos en tu cuenta.';
+  $('#histList').innerHTML='<p class="note">Cargando…</p>';
+  try{histCache=await histList()}catch(e){histCache=[];toast('No se pudo leer el historial.')}drawHist();
+}
+function drawHist(){
+  const q=$('#histQ').value.trim().toLowerCase();
+  const L=(histCache||[]).filter(x=>!q||[x.empresa,x.area,x.posicion,x.titulo,x.numero].join(' ').toLowerCase().includes(q));
+  $('#histList').innerHTML=L.length?L.map(x=>`<div class="hi"><div><b>${esc(x.posicion||x.titulo||'Sin posición')}</b> ${x.numero?'· AST '+esc(x.numero):''}<div class="meta">${esc([x.empresa,x.area].filter(Boolean).join(' · ')||'Sin empresa ni área')} · ${esc(fmtDate(x.fecha)||'sin fecha')} · RR máx. ${fmtN(x.maxRR||0)} ${chip(x.maxRR||0)}</div></div><div class="row"><button class="sm" data-h-open="${esc(x.id)}">Abrir</button><button class="sm" data-h-dup="${esc(x.id)}">Duplicar como base</button><button class="sm x" data-h-del="${esc(x.id)}">Eliminar</button></div></div>`).join(''):`<p class="note">${histCache&&histCache.length?'Sin resultados para la búsqueda.':'Aún no hay AST guardados. Usa "Guardar en historial" en Paso 3 · Revisión y exportación.'}</p>`;
+}
+$('#histQ').addEventListener('input',drawHist);
+$('#histList').addEventListener('click',async e=>{
+  const b=e.target.closest('button');if(!b)return;
+  const id=b.dataset.hOpen||b.dataset.hDup||b.dataset.hDel;const x=(histCache||[]).find(y=>y.id===id);if(!x)return;
+  if(b.dataset.hDel){if(b.dataset.confirm){await histDelete(id);histCache=histCache.filter(y=>y.id!==id);drawHist();toast('AST eliminado.')}else{b.dataset.confirm='1';b.textContent='¿Eliminar? Toca otra vez';setTimeout(()=>{if(b.isConnected){delete b.dataset.confirm;b.textContent='Eliminar'}},4000)}return}
+  try{
+    if(!x.doc||typeof x.doc!=='object')throw new Error('registro sin contenido');
+    const d=JSON.parse(JSON.stringify(x.doc));
+    const nd=fixDoc(Object.assign(newDoc(),d));
+    if(b.dataset.hDup){nd.id=uid();nd.creado=Date.now();nd.header.numero='';nd.header.revision='';nd.header.fecha=today();nd.titulo=(nd.titulo||'')+' (copia)';toast('Copia creada: actualiza número, fecha y revisión.')}
+    D=nd;touch();location.hash='#ast';
+  }catch(err){console.warn('No se pudo abrir el AST del historial',err);toast('No se pudo abrir este AST: el registro está incompleto o dañado.')}
+});
+$('#btnGuardar').onclick=histSave;
+$('#btnNuevoAst').onclick=e=>{const b=e.currentTarget;if(!b.dataset.confirm){b.dataset.confirm='1';b.textContent='¿Descartar el AST actual? Toca otra vez';setTimeout(()=>{delete b.dataset.confirm;b.textContent='Nuevo AST'},4000);return}delete b.dataset.confirm;b.textContent='Nuevo AST';D=newDoc();inputs.fotos=[];inputs.video=null;touch();location.hash='#nuevo'};
+
+/* ---------- Metodología ---------- */
+function renderMet(){
+  $('#umbral').value=D.config.umbral;
+  const t=(title,obj,order)=>`<div><h3>${title}</h3><table class="mt"><tbody>${order.map(n=>`<tr><th>${n}</th><td>${esc(obj[n])}</td></tr>`).join('')}</tbody></table></div>`;
+  $('#metTablas').innerHTML=`<div class="two">${t('C3 — Frecuencia (F)',F_TXT,[5,4,3,2,1])}${t('C4 — Probabilidad (P)',P_TXT,[5,4,3,2,1])}${t('C2 — Severidad (S)',S_TXT,[5,4,3,2,1])}<div><h3>Jerarquía de controles (C)</h3><table class="mt"><tbody>${[1,2,3,4,5].map(n=>`<tr><th>${n}</th><td>${JER[n]}</td><td class="num">${FACT[n].toFixed(2)}</td></tr>`).join('')}</tbody></table><h3 style="margin-top:16px">Clasificación (RI y RR)</h3><table class="mt"><tbody><tr><th>64 a 125</th><td>${chip(64)} Operación no permitida</td></tr><tr><th>40 a 63</th><td>${chip(40)} Acción requerida inmediatamente</td></tr><tr><th>24 a 39</th><td>${chip(24)} Acción requerida en menos de 1 semana</td></tr><tr><th>1 a 23</th><td>${chip(1)} Acción requerida no inmediata</td></tr></tbody></table></div></div>
+  <h3 style="margin-top:20px">Límites de carga manual — NOM-036-1-STPS-2018, numeral 8.3 b) 2), Tabla 1</h3><p>${VN}</p><div class="scroll"><table class="mt"><thead><tr><th>Género</th><th>Edad</th><th>Masa máxima</th></tr></thead><tbody><tr><td>Hombres</td><td>18 a 45 años</td><td class="num">25 kg</td></tr><tr><td>Mujeres</td><td>18 a 45 años</td><td class="num">20 kg</td></tr><tr><td>Hombres</td><td>Mayores de 45 años*</td><td class="num">20 kg</td></tr><tr><td>Mujeres</td><td>Mayores de 45 años*</td><td class="num">15 kg</td></tr><tr><td>Hombres y mujeres</td><td>Menores de 18 años</td><td class="num">7 kg</td></tr></tbody></table></div><p class="note">* Con evaluación médica de aptitud que lo avale, pueden cargar hasta el límite de 18 a 45 años. Mujeres en gestación y 10 semanas posteriores al parto: no más de 10 kg, con aval médico (8.3 b) 1)). No aplica a cargas menores de 3 kg. Son límites máximos, no valores seguros. ${VN}</p>
+  <h3 style="margin-top:20px">Catálogo de peligros</h3><div class="two">${CAT.map(([g])=>`<div><b>${g}</b><ul class="clean">${Object.entries(TIPO).filter(([,o])=>o.g===g).map(([n,o])=>`<li>${n} ${esc(o.t)}${nv(o.t)}</li>`).join('')}</ul></div>`).join('')}</div>`;
+}
+$('#umbral').addEventListener('change',e=>{const v=Number(e.target.value);if(v>=1&&v<=125){D.config.umbral=v;touch();toast('Umbral actualizado: RR ≥ '+v)}else e.target.value=D.config.umbral});
+
+/* ---------- Arranque ---------- */
+// Altura de la barra superior fija, para que la cabecera de la tabla AST quede visible debajo de ella al desplazarse.
+function setTopH(){const t=$('.top');if(!t)return;const fixed=getComputedStyle(t).position==='sticky';document.documentElement.style.setProperty('--toph',(fixed?t.offsetHeight:0)+'px')}
+addEventListener('resize',setTopH);setTopH();
+route();
+(async()=>{
+  const C=window.claude;if(!C||!C.use)return;
+  const [s,dl,db,us]=await Promise.all([C.use('sample'),C.use('downloads'),C.use('db'),C.use('user')].map(p=>p.catch(()=>null)));
+  sampleFn=s;downloads=dl;
+  if(s){try{limits=await s.limits()}catch(e){limits=null}}
+  const canImg=!!(limits&&limits.images);
+  if(s&&!canImg){$('#cFotos').querySelector('.note').textContent='Esta vista no puede enviar imágenes al asistente.';$('#cVideo').querySelector('.note').textContent='Esta vista no puede enviar imágenes al asistente.'}
+  if(db&&us){try{const id=await us.id();if(id){dbCol=db.doc(`data/users/${id}/lib`).collection('ast');dbPrefs=db.doc(`data/users/${id}/prefs`)}}catch(e){}}
+  if(location.hash==='#historial')renderHist();
+  if(location.hash==='#datos')renderDatos();
+})();
+}
+</script>
+</body>
+</html>
